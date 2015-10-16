@@ -1,0 +1,27 @@
+---
+suite: Basic template evaluation tests
+tests:
+  - desc: string evaluates into itself
+    scope: null
+    template: "plain string"
+    result: "plain string"
+
+  - desc: map evaluates into itself
+    scope: null
+    template:
+      foo: 12
+      bar: [1, 2, 3]
+
+    result:
+      foo: 12
+      bar: [1, 2, 3]
+
+  - desc: array evaluates into itself
+    scope: null
+    template: [1, 2, 3]
+    result: [1, 2, 3]
+
+  - desc: null evaluates into null
+    scope: null
+    template: null
+    result: null

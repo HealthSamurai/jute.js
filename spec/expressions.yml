@@ -1,0 +1,15 @@
+---
+suite: Tests on expressions
+tests:
+  - desc: path allows access to different structure values
+    scope: {"a": 1, "b": [1, 2, {"foo": 42}], "c": {"d": true}}
+    template:
+      foo: $ a
+      bar: $ b.1
+      baz: $ b.3.foo
+      bang: $ c.d
+    result:
+      foo: 1
+      bar: 1
+      baz: 42
+      bang: true
