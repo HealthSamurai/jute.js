@@ -15,6 +15,6 @@ load = () ->
         spec.tests.forEach (test) ->
           it test.desc, () ->
             result = jute.transform(test.scope, test.template)
-            assert.equal(result, test.result)
+            assert.deepEqual(result, test.result)
 
 load()

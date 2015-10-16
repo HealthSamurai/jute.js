@@ -6,6 +6,21 @@ tests:
     template: "plain string"
     result: "plain string"
 
+  - desc: number evaluates into itself
+    scope: null
+    template: 42
+    result: 42
+
+  - desc: bool evaluates into itself
+    scope: null
+    template: false
+    result: false
+
+  - desc: null evaluates into null
+    scope: null
+    template: null
+    result: null
+
   - desc: map evaluates into itself
     scope: null
     template:
@@ -20,8 +35,3 @@ tests:
     scope: null
     template: [1, 2, 3]
     result: [1, 2, 3]
-
-  - desc: null evaluates into null
-    scope: null
-    template: null
-    result: null
