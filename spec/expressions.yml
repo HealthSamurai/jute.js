@@ -1,7 +1,7 @@
 ---
 suite: Tests on expressions
 tests:
-  - desc: path allows access to different structure values
+  - desc: path allows to access different structure values
     scope: {"a": [{"foo": 1}], "b": [1, 2, {"foo": 42}], "c": {"d": true}}
     template:
       foo: $ a.0
@@ -13,3 +13,11 @@ tests:
       bar: 1
       baz: 42
       bang: true
+
+  - desc: path can contain single element
+    scope:
+      foo: 12
+    template:
+      bar: $ foo
+    result:
+      bar: 12

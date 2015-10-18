@@ -1,3 +1,165 @@
+intersectArrays = (a, b) ->
+  result = []
+
+  for aVal in a
+    for bVal in b
+      if aVal == bVal
+        result.push aVal
+
+  result
+
+makeChildScope = (scope) ->
+  childScope = {}
+  childScope.__proto__ = scope
+
+  childScope
+
+firstKeyName = (object) ->
+  Object.keys(object)[0]
+
+evalLet = (node, scope) ->
+  childScope = makeChildScope(scope)
+  addVarToScope = (name, node) ->
+    childScope[name] = evalNode(node, childScope)
+
+  if Array.isArray(node.$let)
+    for varDecl in node.$let
+      varName = firstKeyName(varDecl)
+
+      if varName
+        addVarToScope(varName, varDecl[varName])
+  else
+    for k, v of node.$let
+      addVarToScope(k, v)
+
+  value = node.$body
+
+  if typeof(value) == 'undefined'
+    throw "No $value attr in $let node: " + JSON.stringify(node)
+
+  evalNode(value, childScope)
+
+evalIf = (node, scope) ->
+  evalResult = evalExpression(node.$if, scope)
+  # console.log "!!!!! if:", node.$if, "=>", evalResult
+
+  if evalResult
+    v = nodeValue(node, '$then')
+    evalNode(v, scope)
+  else
+    evalNode(node.$else || null, scope)
+
+evalSwitch = (node, scope) ->
+  evalResult = evalExpression(node.$switch, scope)
+  resultNode = node[evalResult]
+
+  if typeof(resultNode) == 'undefined'
+    resultNode = node['$default']
+
+  if typeof(resultNode) == 'undefined'
+    null
+  else
+    evalNode(resultNode, scope)
+
+evalFilter = (node, scope) ->
+  if node && node.$filter
+    filter = node.$filter
+    val = nodeValue(node)
+    delete val['$filter']
+
+    val = evalNode(val, scope)
+
+    applyFilter = (filterName, val) ->
+      if filterName.indexOf('(') > 0
+        filterArgs = filterName.match(/\(([^)]+)\)$/)[1].split(",").map(JSON.parse)
+        filterName = filterName.substr(0, filterName.indexOf("("))
+      else
+        filterArgs = []
+
+      filterFn = HELPERS[filterName]
+
+      if !filterFn
+        throw "Unknown filter: '#{filterName}'"
+
+      filterFn.apply(scope, [val].concat(filterArgs))
+
+
+    if Array.isArray(filter)
+      result = val
+
+      for f in filter
+        result = applyFilter(f, result)
+
+      result
+    else
+      applyFilter(filter, val)
+  else
+    node
+
+evalJs = (node, scope) ->
+  if node && node.$js
+    eval(node.$js)
+  else
+    node
+
+evalForeach = (node, scope) ->
+  if node && node.$foreach
+    expr = node.$foreach
+    components = expr.split(' as ').map (str) ->
+      str.trim()
+
+    paths = components[0].split(",").map(parsePath)
+    varName = components[1]
+
+    array = paths.reduce((acc, p) ->
+      v = getIn(scope, p, false)
+      if v && (!Array.isArray(v) || v[0] == '^')
+        v = [ v ]
+
+      acc.concat(v)
+    , [])
+
+    value = nodeValue(node)
+
+    if value.$foreach
+      delete value.$foreach
+
+    result = []
+
+    array.forEach (e) ->
+      newScope = {}
+      newScope.__proto__ = scope
+      newScope[varName] = e
+
+      result.push evalNode(value, newScope)
+      return
+
+    result
+  else
+    node
+
+nodeValue = (node, valueAttr) ->
+  valueObject = node[(valueAttr || '$value')]
+
+  if typeof(valueObject) != 'undefined'
+    valueObject
+  else
+    valueObject = {}
+
+    for key, value of node
+      if !key.match /^\$/
+        valueObject[key] = value
+
+    valueObject
+
+DIRECTIVES =
+  $if: evalIf
+  $switch: evalSwitch
+  $let: evalLet
+  $filter: evalFilter
+  $foreach: evalForeach
+  $js: evalJs
+
 parsePath = (p) ->
   p.split('.').map (e) -> e.trim()
 
@@ -17,6 +179,8 @@ getIn = (obj, path) ->
       if getFirst && Array.isArray(result)
         result = result[1]
 
+  # console.log "!!!! getIn", JSON.stringify(path), "=>", JSON.stringify(result)
+
   result
 
 # This is a quick & dirty implementation
@@ -24,12 +188,16 @@ getIn = (obj, path) ->
 # is to write a parser and to implement
 # an interpreter, but it's too much work for now.
 evalExpression = (expr, scope) ->
+  if typeof(scope) == 'undefined'
+    throw "evalExpression() called with undefined scope. Expression is: #{expr}"
+
+
   pathRegexp = /"(?:[^"\\]|\\.)*"|([a-zA-Z_0-9~][a-zA-Z_0-9.~]+[a-zA-Z_0-9~])/g
   filterRegexp = /(\s*\|\s*[a-zA-Z0-9_]+(\([^)]+\))?)*\s*$/
   filters = null
 
   # get filters at first
-  e = String(expr.substr(1)).replace filterRegexp, (f_str) ->
+  e = expr.replace filterRegexp, (f_str) ->
     filters = f_str.split(/\s*\|\s*/).map (f) ->
       f = f.trim()
 
@@ -50,8 +218,8 @@ evalExpression = (expr, scope) ->
     else
       fullMatch
 
-  # console.log "!!!!! =>", e
   result = eval(e)
+  # console.log "!!!!! evalExpression:", e, " => ", result, scope
 
   for filter in filters
     if Array.isArray(filter)
@@ -70,21 +238,62 @@ evalExpression = (expr, scope) ->
 
   result
 
+isDirective = (node) ->
+  for key, value of node
+    return true if key.match /^\$/
+
+  false
+
+evalDirective = (node, scope) ->
+  knownDirectives = Object.keys(DIRECTIVES)
+  nodeKeys = Object.keys(node)
+  keys = intersectArrays(nodeKeys, knownDirectives)
+
+  if keys.length == 0
+    throw "Could not find known directive among #{nodeKeys.join(', ')}; Known directives are: #{knownDirectives.join(', ')}"
+  else if keys.length > 1
+    throw "Ambigous node with multiple directives found: #{keys.join(', ')}"
+
+  directiveName = keys[0]
+  directiveFn = DIRECTIVES[directiveName]
+
+  directiveFn(node, scope)
+
+
+evalObject = (node, scope) ->
+  if isDirective(node)
+    evalDirective(node, scope)
+  else
+    result = {}
+    for key, value of node
+      result[key] = evalNode(value, scope)
+
+    result
+
+evalString = (node, scope) ->
+  expressionStartRegexp = /^\s*\$\s+/
+
+  if node.match expressionStartRegexp     # is it expression?
+    evalExpression(node.replace(expressionStartRegexp, ''), scope)
+  else
+    node
 
 evalNode = (node, scope) ->
-  if typeof(node) == 'object' && node != null
+  if typeof(scope) == 'undefined'
+    throw "evalNode() called with undefined scope. Node is: #{JSON.stringify(node)}"
+
+  nodeType = typeof(node)
+
+  if nodeType == 'object' && node != null
     if Array.isArray(node)
       node.map (element) -> evalNode(element, scope)
     else
-      result = {}
-
-      for key, value of node
-        result[key] = evalNode(value, scope)
-
-      result
+      evalObject(node, scope)
   else
-    if typeof(node) == 'string' && node[0] == '$'
-      evalExpression(node, scope)
+    if nodeType == 'string'
+      evalString(node, scope)
+    else if nodeType == 'undefined'
+      null
     else
       node
 
