@@ -1,3 +1,7 @@
+HELPERS =
+  join: (s, sep) ->
+    s.join(sep)
+
 intersectArrays = (a, b) ->
   result = []
 
@@ -32,12 +36,12 @@ evalLet = (node, scope) ->
     for k, v of node.$let
       addVarToScope(k, v)
 
-  value = node.$body
+  body = node.$body
 
-  if typeof(value) == 'undefined'
-    throw "No $value attr in $let node: " + JSON.stringify(node)
+  if typeof(body) == 'undefined'
+    throw "No $body attr in $let node: " + JSON.stringify(node)
 
-  evalNode(value, childScope)
+  evalNode(body, childScope)
 
 evalIf = (node, scope) ->
   evalResult = evalExpression(node.$if, scope)
@@ -62,45 +66,36 @@ evalSwitch = (node, scope) ->
     evalNode(resultNode, scope)
 
 evalFilter = (node, scope) ->
-  if node && node.$filter
-    filter = node.$filter
-    val = nodeValue(node)
-    delete val['$filter']
+  filters = node.$filter
+  val = evalNode(nodeValue(node, '$body'), scope)
 
-    val = evalNode(val, scope)
-
-    applyFilter = (filterName, val) ->
-      if filterName.indexOf('(') > 0
-        filterArgs = filterName.match(/\(([^)]+)\)$/)[1].split(",").map(JSON.parse)
-        filterName = filterName.substr(0, filterName.indexOf("("))
-      else
-        filterArgs = []
-
-      filterFn = HELPERS[filterName]
-
-      if !filterFn
-        throw "Unknown filter: '#{filterName}'"
-
-      filterFn.apply(scope, [val].concat(filterArgs))
-
-
-    if Array.isArray(filter)
-      result = val
-
-      for f in filter
-        result = applyFilter(f, result)
-
-      result
+  applyFilter = (filterName, val) ->
+    if filterName.indexOf('(') > 0
+      filterArgs = filterName.match(/\(([^)]+)\)$/)[1].split(",").map(JSON.parse)
+      filterName = filterName.substr(0, filterName.indexOf("("))
     else
-      applyFilter(filter, val)
+      filterArgs = []
+
+    filterFn = HELPERS[filterName]
+
+    if !filterFn
+      throw "Unknown filter: '#{filterName}'"
+
+    filterFn.apply(scope, [val].concat(filterArgs))
+
+
+  if Array.isArray(filters)
+    result = val
+
+    for f in filters
+      result = applyFilter(f, result)
+
+    result
   else
-    node
+    applyFilter(filters, val)
 
 evalJs = (node, scope) ->
-  if node && node.$js
-    eval(node.$js)
-  else
-    node
+  eval(node.$js)
 
 evalMap = (node, scope) ->
   array = evalExpression(node.$map, scope)

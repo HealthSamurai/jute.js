@@ -1,0 +1,12 @@
+---
+suite: $js directive
+tests:
+  - desc: evaluates into result of eval() of passed JS code
+
+    scope:
+      foo: 12
+
+    template:
+      $js: scope.foo + 12
+
+    result: 24
