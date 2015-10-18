@@ -102,41 +102,20 @@ evalJs = (node, scope) ->
   else
     node
 
-evalForeach = (node, scope) ->
-  if node && node.$foreach
-    expr = node.$foreach
-    components = expr.split(' as ').map (str) ->
-      str.trim()
+evalMap = (node, scope) ->
+  array = evalExpression(node.$map, scope)
+  varName = node.$as
+  value = nodeValue(node, '$body')
 
-    paths = components[0].split(",").map(parsePath)
-    varName = components[1]
+  result = []
+  childScope = makeChildScope(scope)
 
-    array = paths.reduce((acc, p) ->
-      v = getIn(scope, p, false)
-      if v && (!Array.isArray(v) || v[0] == '^')
-        v = [ v ]
+  array.forEach (item) ->
+    childScope[varName] = item
 
-      acc.concat(v)
-    , [])
+    result.push evalNode(value, childScope)
 
-    value = nodeValue(node)
-
-    if value.$foreach
-      delete value.$foreach
-
-    result = []
-
-    array.forEach (e) ->
-      newScope = {}
-      newScope.__proto__ = scope
-      newScope[varName] = e
-
-      result.push evalNode(value, newScope)
-      return
-
-    result
-  else
-    node
+  result
 
 nodeValue = (node, valueAttr) ->
   valueObject = node[(valueAttr || '$value')]
@@ -157,7 +136,7 @@ DIRECTIVES =
   $switch: evalSwitch
   $let: evalLet
   $filter: evalFilter
-  $foreach: evalForeach
+  $map: evalMap
   $js: evalJs
 
 parsePath = (p) ->
