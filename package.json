@@ -7,7 +7,8 @@
     "coffee-script": "latest",
     "coffee": "latest",
     "mocha": "latest",
-    "js-yaml": "latest"
+    "js-yaml": "latest",
+    "pegjs": "latest"
   },
   "engines": {
     "node": ">=0.12.0"
@@ -15,6 +16,7 @@
   "scripts": {
     "build": "`npm bin`/coffee -c -o lib/ src/*.coffee",
     "watch": "`npm bin`/coffee -c -w -o lib/ src/*.coffee",
-    "test": "`npm bin`/mocha --compilers coffee:coffee-script/register spec/runner.coffee || echo 'Tests failed'"
+    "test": "`npm bin`/mocha --compilers coffee:coffee-script/register spec/runner.coffee || echo 'Tests failed'",
+    "peg": "`npm bin`/pegjs src/grammar.pegjs lib/parser.js"
   }
 }
