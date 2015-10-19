@@ -2,19 +2,27 @@ assert = require("assert")
 yaml = require("js-yaml")
 fs = require("fs")
 jute = require("./../lib/jute")
+parser = require("./../lib/parser")
 
-load = () ->
-  specsRoot = __dirname
-
-  fs.readdirSync(specsRoot).forEach (path) ->
-    if path.match /\.yml$/
-      absPath = specsRoot + "/" + path
+findYamls = (rootPath, cb) ->
+  fs.readdirSync(rootPath).forEach (fn) ->
+    if fn.match /\.yml$/
+      absPath = rootPath + "/" + fn
       spec = yaml.safeLoad(fs.readFileSync(absPath, 'utf8'))
+      cb(spec)
 
-      describe spec.suite, () ->
-        spec.tests.forEach (test) ->
-          it test.desc, () ->
-            result = jute.transform(test.scope, test.template)
-            assert.deepEqual(test.result, result)
+specsRoot = __dirname
 
-load()
+findYamls specsRoot, (spec) ->
+  describe spec.suite, () ->
+    spec.tests.forEach (test) ->
+      it test.desc, () ->
+        result = jute.transform(test.scope, test.template)
+        assert.deepEqual(test.result, result)
+
+findYamls specsRoot + "/parser", (spec) ->
+  describe spec.suite, () ->
+    spec.tests.forEach (test) ->
+      it "'#{test.str}' is correct expression", () ->
+        result = parser.parse(test.str)
+        assert.deepEqual(test.ast, result)

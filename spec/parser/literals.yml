@@ -1,0 +1,45 @@
+suite: "Expressions parser"
+tests:
+  - str: '"foo"'
+    ast: foo
+
+  - str: '"first line\nsecond line"'
+    ast: first line\nsecond line
+
+  - str: '12'
+    ast: 12
+
+  - str: '+3.1415'
+    ast: 3.1415
+
+  - str: 'true'
+    ast: true
+
+  - str: 'false'
+    ast: false
+
+  - str: 'null'
+    ast: null
+
+  - str: '[1, 2.5, "hello world"]'
+    ast: ["array", 1, 2.5, "hello world"]
+
+  - str: "2 + 3 | foo"
+    ast:
+      - "call"
+      - "foo"
+      - - '+'
+        - 2
+        - 3
+
+  - str: "2 + 3 | foo(true, 'str') | bar"
+    ast:
+      - "call"
+      - "bar"
+      - - "call"
+        - "foo"
+        - - '+'
+          - 2
+          - 3
+        - true
+        - "str"

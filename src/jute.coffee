@@ -1,3 +1,5 @@
+parser = require("./parser")
+
 HELPERS =
   join: (s, sep) ->
     s.join(sep)
