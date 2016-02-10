@@ -1,3 +1,27 @@
+# Patient.name.*.given.*
+# Patient.name.valueQuantity
+# Patient.name.*.(given | family).*
+# Patient.name.*.given |> capitalize
+# PID.5.1 |> capitalize
+# (Patient.name.*.given.* | Patient.name.*.family.*).0 >> capitalize
+# Patient.identifier.*(use = 'ssn').value
+# Patient.identifier.*(system = $mrn-system).value
+# Patient.**.value
+# Patient.**
+# Patient.(deceasedDateTime | deceasedBoolean)
+# Patient.foo.(bar & baz)
+# Patient.telecom(use = 'home').0.value
+
+# get last element = ?
+# get first element = .0
+# perform map = ->(@.foo + @.bar)
+# length = .length
+
+# Function calls:
+
+# capitalize(Patient.name.*.given.*)
+# Patient.name.*.given.* |> foobar
+
 suite: "Expressions parser"
 tests:
   - str: '"foo"'
@@ -24,7 +48,7 @@ tests:
   - str: '[1, 2.5, "hello world"]'
     ast: ["array", 1, 2.5, "hello world"]
 
-  - str: "2 + 3 | foo"
+  - str: "2 + 3 |> foo"
     ast:
       - "call"
       - "foo"
@@ -32,7 +56,7 @@ tests:
         - 2
         - 3
 
-  - str: "2 + 3 | foo(true, 'str') | bar"
+  - str: "2 + 3 |> foo(true, 'str') |> bar"
     ast:
       - "call"
       - "bar"
@@ -43,3 +67,62 @@ tests:
           - 3
         - true
         - "str"
+
+  - str: "foo.bar12.*(this.that + 12)"
+    ast:
+      - "path"
+      - "foo"
+      - "bar12"
+      - - "filter"
+        - - "+"
+          - - "path"
+            - "this"
+            - "that"
+          - 12
+
+  - str: "2.2 + f2.2.abc"
+    ast:
+      - "+"
+      - 2.2
+      - - "path"
+        - "f2"
+        - "2"
+        - "abc"
+
+  - str: "asb.(foo | bar).abc"
+    ast:
+      - "path"
+      - "asb"
+      - - "expr"
+        - - "|"
+          - ["path", "foo"]
+          - ["path", "bar"]
+      - "abc"
+
+  - str: "foo.*.bar"
+    ast:
+      - "path"
+      - "foo"
+      - ["wildcard"]
+      - "bar"
+
+  - str: "foo.**.bar"
+    ast:
+      - "path"
+      - "foo"
+      - ["deepWildcard"]
+      - "bar"
+
+  - str: "@.2.3.4"
+    ast:
+      - "path"
+      - "2"
+      - "3"
+      - "4"
+
+  - str: "@.foo.bar.baz"
+    ast:
+      - "path"
+      - "foo"
+      - "bar"
+      - "baz"

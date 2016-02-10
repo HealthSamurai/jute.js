@@ -25,9 +25,17 @@ AdditiveExpr
   / MultiplicativeExpr
 
 MultiplicativeExpr
-  = left:NegationExpr
+  = left:SetExpr
     SPACE operator:$( MUL / DIV / MOD ) SPACE
     right:MultiplicativeExpr
+    { return [operator, left, right]; }
+
+  / SetExpr
+
+SetExpr
+  = left:NegationExpr
+    SPACE operator:$( '|' ) SPACE
+    right:SetExpr
     { return [operator, left, right]; }
 
   / NegationExpr
@@ -38,31 +46,46 @@ NegationExpr
 
 Value
   = l:Literal { return l; }
-  / q:JuQuery { return q; }
+  / q:Path { return q; }
   / LPAR e:Expr RPAR { return e; }
 
 //////////////////////////////////////////
+// PATHS
+//////////////////////////////////////////
 
-JuQuery
-  = PathHead (DOT PathComponent)*
-    { return ["query", text()]; }
+Path
+  = '@' components:(DOT c:PathComponent { return c; } )*
+    { return ["path"].concat(components); }
+
+  / head:PathHead components:(DOT c:PathComponent { return c; } )*
+    { return ["path"].concat([head].concat(components)); }
 
 PathHead
-  = IdentifierStart IdentifierComponent*
+  = NON_DIGIT_CHAR ID_CHAR*
+    { return text() };
 
 PathComponent
-  = IdentifierComponent+
+  = c:ID_CHAR+
+    { return text(); }
+  / p:PathPredicate
+    { return p; }
+  / '**'
+    { return ['deepWildcard']; }
+  / '*'
+    { return ['wildcard']; }
+  / LPAR e:Expr RPAR
+    { return ['expr', e]; }
 
-IdentifierStart
-  = NON_DIGIT_CHAR
+PathPredicate
+  = '*' LPAR e:Expr RPAR
+    { return ["filter", e]; }
 
-IdentifierComponent
-  = ID_CHAR
-
+//////////////////////////////////////////
+// FILTERS
 //////////////////////////////////////////
 
 Filters
-  = filters:(SPACE PIPE SPACE filter:Filter { return filter; })+
+  = filters:(SPACE '|>' SPACE filter:Filter { return filter; })+
     { return filters; }
 
 Filter
@@ -75,12 +98,11 @@ FilterName
 
 FilterArgs
   = LPAR SPACE head:Expr
-    tail:(SPACE COMMA SPACE e:Expr {return e;})* SPACE RPAR {
-      return [head].concat(tail);
-    }
+    tail:(SPACE COMMA SPACE e:Expr {return e;})* SPACE RPAR
+    { return [head].concat(tail); }
 
 //////////////////////////////////////////
-// Literals
+// LITERALS
 //////////////////////////////////////////
 
 Literal
@@ -91,7 +113,7 @@ Literal
   / NullLiteral
 
 NumberLiteral
-  = (PLUS / MINUS)? [0-9]+ fract:(DOT [0-9]+)? {
+  = ('+' / '-')? [0-9]+ fract:(DOT [0-9]+)? {
     if (fract) {
       return parseFloat(text());
     } else {
@@ -105,11 +127,11 @@ ArrayLiteral
     { return ["array", head].concat(tail || {}); }
 
 BoolLiteral
-  = "true" !IdentifierStart { return true; }
-  / "false" !IdentifierStart { return false; }
+  = "true" !ID_CHAR { return true; }
+  / "false" !ID_CHAR { return false; }
 
 NullLiteral
-  = "null" !IdentifierStart { return null; }
+  = "null" !ID_CHAR { return null; }
 
 //////////////////////////////////////////
 // String Literal
