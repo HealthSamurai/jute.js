@@ -1,4 +1,4 @@
-parser = require("./parser")
+expr = require("./expression")
 
 HELPERS =
   join: (s, sep) ->
@@ -46,7 +46,7 @@ evalLet = (node, scope) ->
   evalNode(body, childScope)
 
 evalIf = (node, scope) ->
-  evalResult = evalExpression(node.$if, scope)
+  evalResult = expr.eval(node.$if, scope)
   # console.log "!!!!! if:", node.$if, "=>", evalResult
 
   if evalResult
@@ -56,7 +56,7 @@ evalIf = (node, scope) ->
     evalNode(node.$else || null, scope)
 
 evalSwitch = (node, scope) ->
-  evalResult = evalExpression(node.$switch, scope)
+  evalResult = expr.eval(node.$switch, scope)
   resultNode = node[evalResult]
 
   if typeof(resultNode) == 'undefined'
@@ -100,7 +100,7 @@ evalJs = (node, scope) ->
   eval(node.$js)
 
 evalMap = (node, scope) ->
-  array = evalExpression(node.$map, scope)
+  array = expr.eval(node.$map, scope)
   varName = node.$as
   value = nodeValue(node, '$body')
 
@@ -109,7 +109,6 @@ evalMap = (node, scope) ->
 
   array.forEach (item) ->
     childScope[varName] = item
-
     result.push evalNode(value, childScope)
 
   result
@@ -136,83 +135,6 @@ DIRECTIVES =
   $map: evalMap
   $js: evalJs
 
-parsePath = (p) ->
-  p.split('.').map (e) -> e.trim()
-
-getIn = (obj, path) ->
-  result = obj
-
-  path.forEach (x) ->
-    if !(result == null or result == undefined)
-      getFirst = false
-
-      if x[x.length - 1] == '~'
-        x = x.substr(0, x.length - 1)
-        getFirst = true
-
-      result = result[x]
-
-      if getFirst && Array.isArray(result)
-        result = result[1]
-
-  # console.log "!!!! getIn", JSON.stringify(path), "=>", JSON.stringify(result)
-
-  result
-
-# This is a quick & dirty implementation
-# of expression evaluator. More robust approach
-# is to write a parser and to implement
-# an interpreter, but it's too much work for now.
-evalExpression = (expr, scope) ->
-  if typeof(scope) == 'undefined'
-    throw "evalExpression() called with undefined scope. Expression is: #{expr}"
-
-
-  pathRegexp = /"(?:[^"\\]|\\.)*"|([a-zA-Z_0-9~][a-zA-Z_0-9.~]+[a-zA-Z_0-9~])/g
-  filterRegexp = /(\s*\|\s*[a-zA-Z0-9_]+(\([^)]+\))?)*\s*$/
-  filters = null
-
-  # get filters at first
-  e = expr.replace filterRegexp, (f_str) ->
-    filters = f_str.split(/\s*\|\s*/).map (f) ->
-      f = f.trim()
-
-      if f.indexOf("(") > 0
-        args = f.match(/\(([^)]+)\)$/)[1].split(",").map(JSON.parse)
-        f = f.substr(0, f.indexOf("("))
-        [f, args]
-      else
-        f
-
-    filters.shift()
-    ""
-
-  e = e.replace pathRegexp, (fullMatch, pathStr) ->
-    if pathStr
-      path = parsePath(pathStr)
-      "getIn(scope, #{JSON.stringify(path)})"
-    else
-      fullMatch
-
-  result = eval(e)
-  # console.log "!!!!! evalExpression:", e, " => ", result, scope
-
-  for filter in filters
-    if Array.isArray(filter)
-      name = filter.shift()
-      args = filter
-    else
-      name = filter
-      args = []
-
-    filterFn = HELPERS[name]
-
-    if !filterFn
-      throw "Unknown filter: '#{name}'"
-
-    result = filterFn.apply(scope, [result].concat(args))
-
-  result
 
 isDirective = (node) ->
   for key, value of node
@@ -249,8 +171,8 @@ evalObject = (node, scope) ->
 evalString = (node, scope) ->
   expressionStartRegexp = /^\s*\$\s+/
 
-  if node.match expressionStartRegexp     # is it expression?
-    evalExpression(node.replace(expressionStartRegexp, ''), scope)
+  if node.match expressionStartRegexp # is it expression?
+    expr.eval(node.replace(expressionStartRegexp, ''), scope)
   else
     node
 

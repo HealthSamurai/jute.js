@@ -1,5 +1,5 @@
 ---
-suite: Tests on expressions
+suite: Expressions
 tests:
   - desc: path allows to access different structure values
     scope: {"a": [{"foo": 1}], "b": [1, 2, {"foo": 42}], "c": {"d": true}}
@@ -21,3 +21,26 @@ tests:
       bar: $ foo
     result:
       bar: 12
+
+  - desc: plus adds numbers
+    scope:
+    template:
+      bar: $ 2 + 6 - 10
+    result:
+      bar: -2
+
+  - desc: complex algebraic expressions
+    scope:
+    template:
+      ex1: $ 2 + 3 * 3
+      ex2: $ 2 + 3 / 3
+    result:
+      ex1: 11
+      ex2: 3
+
+  - desc: negation negates number
+    scope:
+    template:
+      bar: $ -10
+    result:
+      bar: -10

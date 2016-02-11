@@ -2,7 +2,7 @@ Root
   = e:Expr !. { return e; }
 
 Expr
-  = expr:AdditiveExpr filters:Filters? {
+  = expr:EqualityExpr filters:Filters? {
     var result = expr;
     if (filters != null) {
       for(var i = 0; i < filters.length; i++) {
@@ -15,6 +15,22 @@ Expr
       return result;
     }
   }
+
+EqualityExpr
+  = left:ComparisonExpr
+    SPACE operator:$( '=' / '!=' ) SPACE
+    right:EqualityExpr
+    { return [operator, left, right]; }
+
+  / ComparisonExpr
+
+ComparisonExpr
+  = left:AdditiveExpr
+    SPACE operator:$( '<' / '<=' / '>' / '>=' ) SPACE
+    right:ComparisonExpr
+    { return [operator, left, right]; }
+
+  / AdditiveExpr
 
 AdditiveExpr
   = left:MultiplicativeExpr
@@ -41,7 +57,7 @@ SetExpr
   / NegationExpr
 
 NegationExpr
-  = MINUS v:Value { return ["-", v]; }
+  = MINUS v:Value { return ["unary-", v]; }
   / v:Value { return v; }
 
 Value
