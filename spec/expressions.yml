@@ -14,7 +14,7 @@ tests:
       bar: 1
       baz: 42
       bang: true
-      wc: 42
+      wc: [1, 42]
 
   - desc: path can contain single element
     scope:
