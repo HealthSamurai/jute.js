@@ -8,11 +8,13 @@ tests:
       bar: $ b.0
       baz: $ b.2.foo
       bang: $ c.d
+      wc: '$ @.*.*.foo'
     result:
       foo: {"foo": 1}
       bar: 1
       baz: 42
       bang: true
+      wc: 42
 
   - desc: path can contain single element
     scope:

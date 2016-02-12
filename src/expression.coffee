@@ -27,29 +27,74 @@ evalUnaryMinus = (ast, scope) ->
     operands = ast.slice(2)
     -(evalAst(ast[1], scope))
 
-getIn = (obj, path) ->
-  result = obj
+flatten = (arr) ->
+  arr.reduce((acc, i) ->
+    acc.concat if Array.isArray(i) then flatten(i) else i
+  , [])
 
-  path.forEach (x) ->
-    if !(result == null or result == undefined)
-      getFirst = false
+isWildcard = (c) ->
+  Array.isArray(c) && c.length == 1 && c[0] == 'wildcard'
 
-      if x[x.length - 1] == '~'
-        x = x.substr(0, x.length - 1)
-        getFirst = true
+mapAndFilterNulls = (array, mapFn) ->
+  array.map(mapFn).filter((i) -> i != null && i != undefined)
 
-      result = result[x]
+resolvePath = (scope, path) ->
+  pathHead = path[0]
+  pathTail = path.slice(1)
 
-      if getFirst && Array.isArray(result)
-        result = result[1]
+  if pathHead == null || pathHead == undefined
+    return scope
 
-  result
+  if !(scope == null || scope == undefined)
+    if isWildcard(pathHead)
+      if Array.isArray(scope)
+        return mapAndFilterNulls scope, (item) -> resolvePath(item, pathTail)
+      else if typeof(scope) == "object"
+        return flatten(mapAndFilterNulls Object.keys(scope), (k) -> resolvePath(scope[k], pathTail))
+      else
+        return resolvePath(scope, pathTail)
+    else
+      if Array.isArray(scope) && !(pathHead.match(/^\d+$/))
+        return mapAndFilterNulls scope, (item) -> resolvePath(item[pathHead], pathTail)
+      else
+        return resolvePath(scope[pathHead], pathTail)
+
+# resolvePath = (scope, path) ->
+#   notNull = (i) -> !!i
+#   result = scope
+
+#   path.forEach (comp, index) ->
+#     if !(result == null or result == undefined)
+#       if isWildcard(comp)
+#         if Array.isArray(result)
+#           pathRest = path.slice(index + 1)
+#           console.log "before wc:", result
+#           result = result.map (item) -> resolvePath(item, pathRest)
+#           result = result.filter notNull
+#           console.log "wc result:", result, pathRest
+#           # TODO: hard return here!
+#           return result
+#         else if typeof(result) == "object"
+#           result = Object.keys(result)
+#           console.log "wc result obj:", result
+#         else
+#           result = result
+#       else
+#         # TODO: numeric/non-numeric components should be
+#         # distinguished by parser
+#         if Array.isArray(result) && !(comp.match(/^\d+$/))
+#           result = result.map (item) -> item[comp]
+#           result = result.filter notNull
+#         else
+#           result = result[comp]
+
+#   result
 
 evalPath = (ast, scope) ->
   components = ast.slice(1)
-  getIn(scope, components)
+  resolvePath(scope, components)
 
-TABLE =
+EVAL_TABLE =
   "+": mkEvalOp((a, b) -> a + b)
   "-": mkEvalOp((a, b) -> a - b)
   "*": mkEvalOp((a, b) -> a * b)
@@ -71,7 +116,7 @@ evalAst = (ast, scope) ->
   # console.log "EVAL:", ast, scope
 
   if Array.isArray(ast)
-    evalFn = TABLE[ast[0]]
+    evalFn = EVAL_TABLE[ast[0]]
     if !evalFn
       throw new Error("Don't know how to evaluate #{ast[0]}: #{JSON.stringify(ast)}")
 
