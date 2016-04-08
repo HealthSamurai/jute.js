@@ -16,6 +16,15 @@ tests:
       bang: true
       wc: [1, 42]
 
+  - desc: wildcards collects all available elements
+    scope: {"a": 3, "b": 5, "c": [true, false]}
+    template:
+      a: $ @.*
+      b: $ c.*
+    result:
+      a: [3, 5, [true, false]]
+      b: [true, false]
+
   - desc: path can contain single element
     scope:
       foo: 12

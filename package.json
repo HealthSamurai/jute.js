@@ -14,9 +14,6 @@
     "node": ">=0.12.0"
   },
   "scripts": {
-    "build": "`npm bin`/coffee -c -o lib/ src/*.coffee",
-    "watch": "`npm bin`/coffee -c -w -o lib/ src/*.coffee",
-    "test": "`npm bin`/mocha --compilers coffee:coffee-script/register spec/runner.coffee || echo 'Tests failed'",
-    "peg": "`npm bin`/pegjs -o size src/grammar.pegjs lib/parser.js"
+    "test": "`npm bin`/mocha --compilers coffee:coffee-script/register spec/runner.coffee || echo 'Tests failed'"
   }
 }

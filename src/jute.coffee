@@ -1,5 +1,3 @@
-expr = require("./expression")
-
 HELPERS =
   join: (s, sep) ->
     s.join(sep)
@@ -46,7 +44,7 @@ evalLet = (node, scope) ->
   evalNode(body, childScope)
 
 evalIf = (node, scope) ->
-  evalResult = expr.eval(node.$if, scope)
+  evalResult = evalExpression(node.$if, scope)
   # console.log "!!!!! if:", node.$if, "=>", evalResult
 
   if evalResult
@@ -56,7 +54,7 @@ evalIf = (node, scope) ->
     evalNode(node.$else || null, scope)
 
 evalSwitch = (node, scope) ->
-  evalResult = expr.eval(node.$switch, scope)
+  evalResult = evalExpression(node.$switch, scope)
   resultNode = node[evalResult]
 
   if typeof(resultNode) == 'undefined'
@@ -100,7 +98,7 @@ evalJs = (node, scope) ->
   eval(node.$js)
 
 evalMap = (node, scope) ->
-  array = expr.eval(node.$map, scope)
+  array = evalExpression(node.$map, scope)
   varName = node.$as
   value = nodeValue(node, '$body')
 
@@ -172,7 +170,7 @@ evalString = (node, scope) ->
   expressionStartRegexp = /^\s*\$\s+/
 
   if node.match expressionStartRegexp # is it expression?
-    expr.eval(node.replace(expressionStartRegexp, ''), scope)
+    evalExpression(node.replace(expressionStartRegexp, ''), scope)
   else
     node
 
@@ -198,5 +196,12 @@ evalNode = (node, scope) ->
 transform = (scope, template) ->
   evalNode(template, scope)
 
-module.exports =
+exports =
   transform: transform
+
+if typeof(module) != 'undefined'
+  module.exports = exports
+else if typeof(window) != 'undefined'
+  window.jute = exports
+else
+  this.jute = exports

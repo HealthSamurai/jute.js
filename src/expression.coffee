@@ -1,4 +1,4 @@
-parser = require("./parser")
+# parser var is defined here
 
 mkEvalOp = (opFn) ->
   (ast, scope) ->
@@ -27,10 +27,13 @@ evalUnaryMinus = (ast, scope) ->
     operands = ast.slice(2)
     -(evalAst(ast[1], scope))
 
-flatten = (arr) ->
+flattenRecur = (arr) ->
   arr.reduce((acc, i) ->
     acc.concat if Array.isArray(i) then flatten(i) else i
   , [])
+
+flatten = (arr) ->
+  arr.reduce(((acc, i) -> acc.concat i), [])
 
 isWildcard = (c) ->
   Array.isArray(c) && c.length == 1 && c[0] == 'wildcard'
@@ -50,45 +53,14 @@ resolvePath = (scope, path) ->
       if Array.isArray(scope)
         return mapAndFilterNulls scope, (item) -> resolvePath(item, pathTail)
       else if typeof(scope) == "object"
-        return flatten(mapAndFilterNulls Object.keys(scope), (k) -> resolvePath(scope[k], pathTail))
+        return mapAndFilterNulls Object.keys(scope), (k) -> resolvePath(scope[k], pathTail)
       else
         return resolvePath(scope, pathTail)
     else
       if Array.isArray(scope) && !(pathHead.match(/^\d+$/))
-        return mapAndFilterNulls scope, (item) -> resolvePath(item[pathHead], pathTail)
+        return []
       else
         return resolvePath(scope[pathHead], pathTail)
-
-# resolvePath = (scope, path) ->
-#   notNull = (i) -> !!i
-#   result = scope
-
-#   path.forEach (comp, index) ->
-#     if !(result == null or result == undefined)
-#       if isWildcard(comp)
-#         if Array.isArray(result)
-#           pathRest = path.slice(index + 1)
-#           console.log "before wc:", result
-#           result = result.map (item) -> resolvePath(item, pathRest)
-#           result = result.filter notNull
-#           console.log "wc result:", result, pathRest
-#           # TODO: hard return here!
-#           return result
-#         else if typeof(result) == "object"
-#           result = Object.keys(result)
-#           console.log "wc result obj:", result
-#         else
-#           result = result
-#       else
-#         # TODO: numeric/non-numeric components should be
-#         # distinguished by parser
-#         if Array.isArray(result) && !(comp.match(/^\d+$/))
-#           result = result.map (item) -> item[comp]
-#           result = result.filter notNull
-#         else
-#           result = result[comp]
-
-#   result
 
 evalPath = (ast, scope) ->
   components = ast.slice(1)
@@ -123,6 +95,3 @@ evalAst = (ast, scope) ->
     evalFn(ast, scope)
   else
     ast
-
-module.exports =
-  eval: evalExpression
