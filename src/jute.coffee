@@ -1,6 +1,10 @@
 HELPERS =
-  join: (s, sep) ->
-    s.join(sep)
+  join: (s, sep) -> s.join(sep)
+  toUpperCase: (s) -> String(s).toUpperCase()
+  toLowerCase: (s) -> String(s).toLowerCase()
+
+jute =
+  evalExpression: evalExpression
 
 intersectArrays = (a, b) ->
   result = []
@@ -12,7 +16,7 @@ intersectArrays = (a, b) ->
 
   result
 
-makeChildScope = (scope) ->
+jute.makeChildScope = (scope) ->
   childScope = {}
   childScope.__proto__ = scope
 
@@ -21,10 +25,10 @@ makeChildScope = (scope) ->
 firstKeyName = (object) ->
   Object.keys(object)[0]
 
-evalLet = (node, scope) ->
-  childScope = makeChildScope(scope)
+evalLet = (jute, node, scope, options) ->
+  childScope = jute.makeChildScope(scope)
   addVarToScope = (name, node) ->
-    childScope[name] = evalNode(node, childScope)
+    childScope[name] = jute.evalNode(node, childScope, options)
 
   if Array.isArray(node.$let)
     for varDecl in node.$let
@@ -41,20 +45,20 @@ evalLet = (node, scope) ->
   if typeof(body) == 'undefined'
     throw "No $body attr in $let node: " + JSON.stringify(node)
 
-  evalNode(body, childScope)
+  jute.evalNode(body, childScope, options)
 
-evalIf = (node, scope) ->
-  evalResult = evalExpression(node.$if, scope)
+evalIf = (jute, node, scope, options) ->
+  evalResult = jute.evalExpression(node.$if, scope, options)
   # console.log "!!!!! if:", node.$if, "=>", evalResult
 
   if evalResult
     v = nodeValue(node, '$then')
-    evalNode(v, scope)
+    jute.evalNode(v, scope, options)
   else
-    evalNode(node.$else || null, scope)
+    jute.evalNode(node.$else || null, scope, options)
 
-evalSwitch = (node, scope) ->
-  evalResult = evalExpression(node.$switch, scope)
+evalSwitch = (jute, node, scope, options) ->
+  evalResult = jute.evalExpression(node.$switch, scope, options)
   resultNode = node[evalResult]
 
   if typeof(resultNode) == 'undefined'
@@ -63,11 +67,11 @@ evalSwitch = (node, scope) ->
   if typeof(resultNode) == 'undefined'
     null
   else
-    evalNode(resultNode, scope)
+    jute.evalNode(resultNode, scope, options)
 
-evalFilter = (node, scope) ->
+evalFilter = (jute, node, scope, options) ->
   filters = node.$filter
-  val = evalNode(nodeValue(node, '$body'), scope)
+  val = jute.evalNode(nodeValue(node, '$body'), scope, options)
 
   applyFilter = (filterName, val) ->
     if filterName.indexOf('(') > 0
@@ -94,20 +98,20 @@ evalFilter = (node, scope) ->
   else
     applyFilter(filters, val)
 
-evalJs = (node, scope) ->
+evalJs = (jute, node, scope, options) ->
   eval(node.$js)
 
-evalMap = (node, scope) ->
-  array = evalExpression(node.$map, scope)
+evalMap = (jute, node, scope, options) ->
+  array = jute.evalExpression(node.$map, scope, options)
   varName = node.$as
-  value = nodeValue(node, '$body')
+  value = nodeValue(node, '$body', options)
 
   result = []
-  childScope = makeChildScope(scope)
+  childScope = jute.makeChildScope(scope)
 
   array.forEach (item) ->
     childScope[varName] = item
-    result.push evalNode(value, childScope)
+    result.push jute.evalNode(value, childScope, options)
 
   result
 
@@ -125,23 +129,15 @@ nodeValue = (node, valueAttr) ->
 
     valueObject
 
-DIRECTIVES =
-  $if: evalIf
-  $switch: evalSwitch
-  $let: evalLet
-  $filter: evalFilter
-  $map: evalMap
-  $js: evalJs
-
-
-isDirective = (node) ->
+# TODO: do we really need options here?
+isDirective = (node, options) ->
   for key, value of node
     return true if key.match /^\$/
 
   false
 
-evalDirective = (node, scope) ->
-  knownDirectives = Object.keys(DIRECTIVES)
+evalDirective = (node, scope, options) ->
+  knownDirectives = Object.keys(options.directives)
   nodeKeys = Object.keys(node)
   keys = intersectArrays(nodeKeys, knownDirectives)
 
@@ -151,30 +147,32 @@ evalDirective = (node, scope) ->
     throw "Ambigous node with multiple directives found: #{keys.join(', ')}"
 
   directiveName = keys[0]
-  directiveFn = DIRECTIVES[directiveName]
+  directiveFn = options.directives[directiveName]
 
-  directiveFn(node, scope)
+  directiveFn(jute, node, scope, options)
 
-
-evalObject = (node, scope) ->
-  if isDirective(node)
-    evalDirective(node, scope)
+evalObject = (node, scope, options) ->
+  if isDirective(node, options)
+    evalDirective(node, scope, options)
   else
     result = {}
     for key, value of node
-      result[key] = evalNode(value, scope)
+      result[key] = jute.evalNode(value, scope, options)
 
     result
 
-evalString = (node, scope) ->
+evalString = (node, scope, options) ->
   expressionStartRegexp = /^\s*\$\s+/
 
   if node.match expressionStartRegexp # is it expression?
-    evalExpression(node.replace(expressionStartRegexp, ''), scope)
+    jute.evalExpression(node.replace(expressionStartRegexp, ''), scope)
   else
     node
 
-evalNode = (node, scope) ->
+jute.evalNode = (node, scope, options) ->
+  if typeof(options) == 'undefined' || !options
+    throw "evalNode() called without options. Node is: #{JSON.stringify(node)}"
+
   if typeof(scope) == 'undefined'
     throw "evalNode() called with undefined scope. Node is: #{JSON.stringify(node)}"
 
@@ -182,22 +180,36 @@ evalNode = (node, scope) ->
 
   if nodeType == 'object' && node != null
     if Array.isArray(node)
-      node.map (element) -> evalNode(element, scope)
+      node.map (element) -> jute.evalNode(element, scope, options)
     else
-      evalObject(node, scope)
+      evalObject(node, scope, options)
   else
     if nodeType == 'string'
-      evalString(node, scope)
+      evalString(node, scope, options)
     else if nodeType == 'undefined'
       null
     else
       node
 
-transform = (scope, template) ->
-  evalNode(template, scope)
+DEFAULT_DIRECTIVES =
+  $if: evalIf
+  $switch: evalSwitch
+  $let: evalLet
+  $filter: evalFilter
+  $map: evalMap
+  $js: evalJs
+
+transform = (scope, template, options) ->
+  options ?=
+    directives: {}
+
+  extend(options.directives, DEFAULT_DIRECTIVES)
+
+  jute.evalNode(template, scope, options)
 
 exports =
   transform: transform
+  parser: parser
 
 if typeof(module) != 'undefined'
   module.exports = exports
