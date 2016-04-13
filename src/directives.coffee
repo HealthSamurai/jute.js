@@ -75,6 +75,10 @@ evalJs = (jute, node, scope, options) ->
 
 evalMap = (jute, node, scope, options) ->
   array = jute.evalExpression(node.$map, scope, options)
+
+  if (!Array.isArray(array))
+    array = [array]
+
   varName = node.$as
   value = nodeValue(node, '$body', options)
 
