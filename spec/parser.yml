@@ -73,7 +73,7 @@ tests:
       - "path"
       - "foo"
       - "bar12"
-      - - "filter"
+      - - "pred"
         - - "+"
           - - "path"
             - "this"
@@ -98,6 +98,22 @@ tests:
           - ["path", "foo"]
           - ["path", "bar"]
       - "abc"
+
+  - str: "foo | bar"
+    ast:
+      - "|"
+      - ["path", "foo"]
+      - ["path", "bar"]
+
+  - str: "@.(foo | bar).abc"
+    ast:
+      - "path"
+      - - "expr"
+        - - "|"
+          - ["path", "foo"]
+          - ["path", "bar"]
+      - "abc"
+
 
   - str: "foo.*.bar"
     ast:

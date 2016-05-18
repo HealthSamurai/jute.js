@@ -1,14 +1,25 @@
 # parser var is defined here
 
+toSet = (v) ->
+  if Array.isArray(v)
+    new Set((v.map (x) -> JSON.stringify(x)))
+  else
+    new Set([JSON.stringify(v)])
+
+setToArray = (s) ->
+  r = []
+
+  s.forEach (v) ->
+    r.push(JSON.parse(v))
+
+  r
+
 mkEvalOp = (opFn) ->
   (ast, scope) ->
     op = ast[0]
 
     if ast.length < 3
       throw new Error("Insufficient operands for '#{op}' operator: #{JSON.stringify(ast)}")
-
-    if !opFn
-      throw new Error("Don't know how to evaluate #{op}")
 
     operands = ast.slice(2)
     result = evalAst(ast[1], scope)
@@ -17,6 +28,22 @@ mkEvalOp = (opFn) ->
       result = opFn(result, evalAst(operand, scope))
 
     result
+
+evalUnion = (ast, scope) ->
+  if typeof(Set) != "function"
+    return ["Sets are not supported in this JS runtime (TODO: fallback implementation)"]
+
+  if ast.length < 3
+    throw new Error("Insufficient operands for '|' operator: #{JSON.stringify(ast)}")
+
+  operands = ast.slice(2)
+  result = toSet(evalAst(ast[1], scope))
+
+  for operand in operands
+    otherSet = toSet(evalAst(operand, scope))
+    result = toSet(setToArray(result).concat(setToArray(otherSet)))
+
+  setToArray(result)
 
 evalUnaryMinus = (ast, scope) ->
     op = ast[0]
@@ -42,8 +69,10 @@ isDeepWildcard = (c) ->
   Array.isArray(c) && c.length == 1 && c[0] == 'deepWildcard'
 
 isPredicate = (c) ->
-  Array.isArray(c) && c[0] == 'expr'
+  Array.isArray(c) && c[0] == 'pred'
 
+isPathExpression = (c) ->
+  Array.isArray(c) && c[0] == 'expr'
 
 putPathResult = (acc, res) ->
   if Array.isArray(acc.result)
@@ -113,6 +142,9 @@ resolvePath = (scope, path, acc) ->
       else
         putPathResult(acc, null)
         return
+    else if isPathExpression(pathHead)
+      putPathResult(acc, "TODO: path expressions are not implemented")
+      return
     else
       if Array.isArray(scope) && !Number.isInteger(pathHead)
         putPathResult(acc, null)
@@ -130,6 +162,7 @@ evalPath = (ast, scope) ->
 
 EVAL_TABLE =
   "+": mkEvalOp((a, b) -> a + b)
+  "|": evalUnion
   "-": mkEvalOp((a, b) -> a - b)
   "*": mkEvalOp((a, b) -> a * b)
   "/": mkEvalOp((a, b) -> a / b)

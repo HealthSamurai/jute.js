@@ -96,7 +96,7 @@ PathComponent
 
 PathPredicate
   = '*' LPAR e:Expr RPAR
-    { return ["expr", e]; }
+    { return ["pred", e]; }
 
 //////////////////////////////////////////
 // FILTERS
