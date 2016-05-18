@@ -38,12 +38,30 @@ flatten = (arr) ->
 isWildcard = (c) ->
   Array.isArray(c) && c.length == 1 && c[0] == 'wildcard'
 
+isDeepWildcard = (c) ->
+  Array.isArray(c) && c.length == 1 && c[0] == 'deepWildcard'
+
+isPredicate = (c) ->
+  Array.isArray(c) && c[0] == 'expr'
+
+
 putPathResult = (acc, res) ->
   if Array.isArray(acc.result)
     if res != null && res != undefined
       acc.result.push(res)
   else
     acc.result = res
+
+resolveDeepWildcard = (scope, path, acc) ->
+  if Array.isArray(scope)
+    for item in scope
+      resolvePath(item, path, acc)
+      resolveDeepWildcard(item, path, acc)
+
+  else if typeof(scope) == 'object'
+    for k, v of scope
+      resolvePath(v, path, acc)
+      resolveDeepWildcard(v, path, acc)
 
 resolvePath = (scope, path, acc) ->
   pathHead = path[0]
@@ -68,6 +86,29 @@ resolvePath = (scope, path, acc) ->
       else if typeof(scope) == "object"
         for k, v of scope
           resolvePath(v, pathTail, acc)
+
+      else
+        putPathResult(acc, null)
+        return
+    else if isDeepWildcard(pathHead)
+      if !Array.isArray(acc.result)
+        acc.result = []
+
+      resolveDeepWildcard(scope, pathTail, acc)
+      return
+    else if isPredicate(pathHead)
+      if !Array.isArray(acc.result)
+        acc.result = []
+
+      if Array.isArray(scope)
+        for item in scope
+          if evalAst(pathHead[1], item)
+            resolvePath(item, pathTail, acc)
+
+      else if typeof(scope) == "object"
+        for k, v of scope
+          if evalAst(pathHead[1], v)
+            resolvePath(v, pathTail, acc)
 
       else
         putPathResult(acc, null)
