@@ -120,6 +120,13 @@ tests:
       - "3"
       - "4"
 
+  - str: "@.242.30.4"
+    ast:
+      - "path"
+      - "242"
+      - "30"
+      - "4"
+
   - str: "@.foo.bar.baz"
     ast:
       - "path"

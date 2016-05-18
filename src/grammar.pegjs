@@ -81,7 +81,9 @@ PathHead
     { return text() };
 
 PathComponent
-  = c:ID_CHAR+
+  = [0-9]+
+    { return parseInt(text()); }
+  / ID_CHAR+
     { return text(); }
   / p:PathPredicate
     { return p; }

@@ -38,33 +38,54 @@ flatten = (arr) ->
 isWildcard = (c) ->
   Array.isArray(c) && c.length == 1 && c[0] == 'wildcard'
 
-mapAndFilterNulls = (array, mapFn) ->
-  array.map(mapFn).filter((i) -> i != null && i != undefined)
+putPathResult = (acc, res) ->
+  if Array.isArray(acc.result)
+    if res != null && res != undefined
+      acc.result.push(res)
+  else
+    acc.result = res
 
-resolvePath = (scope, path) ->
+resolvePath = (scope, path, acc) ->
   pathHead = path[0]
   pathTail = path.slice(1)
 
-  if pathHead == null || pathHead == undefined
-    return scope
+  if !pathHead
+    putPathResult(acc, scope)
+    return
 
-  if !(scope == null || scope == undefined)
+  if !scope
+    putPathResult(acc, null)
+    return
+  else
     if isWildcard(pathHead)
+      if !Array.isArray(acc.result)
+        acc.result = []
+
       if Array.isArray(scope)
-        return mapAndFilterNulls scope, (item) -> resolvePath(item, pathTail)
+        for item in scope
+          resolvePath(item, pathTail, acc)
+
       else if typeof(scope) == "object"
-        return mapAndFilterNulls Object.keys(scope), (k) -> resolvePath(scope[k], pathTail)
+        for k, v of scope
+          resolvePath(v, pathTail, acc)
+
       else
-        return resolvePath(scope, pathTail)
+        putPathResult(acc, null)
+        return
     else
-      if Array.isArray(scope) && !(pathHead.match(/^\d+$/))
-        return []
+      if Array.isArray(scope) && !Number.isInteger(pathHead)
+        putPathResult(acc, null)
+        return
       else
-        return resolvePath(scope[pathHead], pathTail)
+        resolvePath(scope[pathHead], pathTail, acc)
 
 evalPath = (ast, scope) ->
+  # console.log "evaluating:", JSON.stringify(ast, null, 2)
   components = ast.slice(1)
-  resolvePath(scope, components)
+  acc = { result: null }
+
+  resolvePath(scope, components, acc)
+  return acc.result
 
 EVAL_TABLE =
   "+": mkEvalOp((a, b) -> a + b)
