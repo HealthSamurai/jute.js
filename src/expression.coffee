@@ -1,16 +1,16 @@
 # parser var is defined here
 
-toSet = (v) ->
+toSet = (v, stringify) ->
   if Array.isArray(v)
-    new Set((v.map (x) -> JSON.stringify(x)))
+    new Set((v.map (x) -> if stringify then x else JSON.stringify(x)))
   else
-    new Set([JSON.stringify(v)])
+    new Set([if stringify then v else JSON.stringify(v)])
 
 setToArray = (s) ->
   r = []
 
   s.forEach (v) ->
-    r.push(JSON.parse(v))
+    r.push(v)
 
   r
 
@@ -37,13 +37,13 @@ evalUnion = (ast, scope) ->
     throw new Error("Insufficient operands for '|' operator: #{JSON.stringify(ast)}")
 
   operands = ast.slice(2)
-  result = toSet(evalAst(ast[1], scope))
+  result = toSet(evalAst(ast[1], scope), true)
 
   for operand in operands
-    otherSet = toSet(evalAst(operand, scope))
-    result = toSet(setToArray(result).concat(setToArray(otherSet)))
+    otherSet = toSet(evalAst(operand, scope), true)
+    result = toSet(setToArray(result).concat(setToArray(otherSet)), false)
 
-  setToArray(result)
+  setToArray(result).map JSON.parse
 
 evalUnaryMinus = (ast, scope) ->
     op = ast[0]

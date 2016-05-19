@@ -152,3 +152,14 @@ tests:
 
   - str: "-(2.0 + 3.0)"
     ast: ["unary-", ["+", 2.0, 3.0]]
+
+  - str: "(path + starting).with.expression"
+    ast:
+      - "path"
+      - - "expr"
+        - - "+"
+          - ["path", "path"]
+          - ["path", "starting"]
+      - "with"
+      - "expression"
+

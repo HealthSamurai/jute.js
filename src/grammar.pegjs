@@ -76,6 +76,9 @@ Path
   / head:PathHead components:(DOT c:PathComponent { return c; } )*
     { return ["path"].concat([head].concat(components)); }
 
+  / expr:PathExpr components:(DOT c:PathComponent { return c; } )+
+    { return ["path"].concat([expr].concat(components)); }
+
 PathHead
   = NON_DIGIT_CHAR ID_CHAR*
     { return text() };
@@ -91,7 +94,11 @@ PathComponent
     { return ['deepWildcard']; }
   / '*'
     { return ['wildcard']; }
-  / LPAR e:Expr RPAR
+  / expr:PathExpr
+    { return expr; }
+
+PathExpr
+  = LPAR e:Expr RPAR
     { return ['expr', e]; }
 
 PathPredicate

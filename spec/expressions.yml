@@ -84,26 +84,15 @@ tests:
     scope:
       <<: *goessner
     template:
-      cheap_books: $ store.book.*(@.price < 10)
-      reference_book: $ store.book.*(@.category = 'reference')
+      cheap_books: $ store.book.*(@.price < 10).title
+      reference_book: $ store.book.*(@.category = 'reference').title
     result:
       reference_book:
-        - category: "reference"
-          author: "Nigel Rees"
-          title: "Sayings of the Century"
-          price: 8.95
+        - "Sayings of the Century"
         
       cheap_books:
-        - category: "reference"
-          author: "Nigel Rees"
-          title: "Sayings of the Century"
-          price: 8.95
-
-        - category: "fiction"
-          author: "Herman Melville"
-          title: "Moby Dick"
-          isbn: "0-553-21311-3"
-          price: 8.99
+        - "Sayings of the Century"
+        - "Moby Dick"
 
   - desc: path with wildcards collects all available elements
     scope: {"a": 3, "b": 5, "c": [true, false]}
