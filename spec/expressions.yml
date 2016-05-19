@@ -26,6 +26,7 @@ tests:
             title: "The Lord of the Rings"
             isbn: "0-395-19395-8"
             price: 22.99
+
         bicycle:
           color: "red"
           price: 19.95
@@ -52,6 +53,25 @@ tests:
       author: $ store.book.1.author
     result:
       author: "Evelyn Waugh"
+
+  - desc: path allow to get single array element
+    scope:
+      <<: *goessner
+    template:
+      first: $ store.book.0
+      second: $ store.book.1
+    result:
+      first:
+        category: "reference"
+        author: "Nigel Rees"
+        title: "Sayings of the Century"
+        price: 8.95
+
+      second:
+        category: "fiction"
+        author: "Evelyn Waugh"
+        title: "Sword of Honour"
+        price: 12.99
 
   - desc: path with deep wildcards collects all values regardless its level
     scope:
@@ -89,7 +109,7 @@ tests:
     result:
       reference_book:
         - "Sayings of the Century"
-        
+
       cheap_books:
         - "Sayings of the Century"
         - "Moby Dick"
@@ -136,10 +156,12 @@ tests:
 
   - desc: union operator performs union operation on it\'s operands
     scope:
+      <<: *goessner
       a: [10, true, {foo: {bar: "a"}}]
       b: [20, "hello!", {foo: {bar: "a"}}]
     template:
       bar: $ a | b
+      baz: $ store.book | store.flower
     result:
       bar:
         - 10
@@ -147,4 +169,18 @@ tests:
         - {foo: {bar: "a"}}
         - 20
         - "hello!"
+      baz:
+        12
 
+  - desc: path expressions change path scope
+    scope:
+      <<: *goessner
+    template:
+      bar: $ store.(book | flower).*.price
+    result:
+      bar:
+        - 8.95
+        - 12.99
+        - 8.99
+        - 22.99
+        - 1.3

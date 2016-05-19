@@ -74,13 +74,6 @@ isPredicate = (c) ->
 isPathExpression = (c) ->
   Array.isArray(c) && c[0] == 'expr'
 
-putPathResult = (acc, res) ->
-  if Array.isArray(acc.result)
-    if res != null && res != undefined
-      acc.result.push(res)
-  else
-    acc.result = res
-
 resolveDeepWildcard = (scope, path, acc) ->
   if Array.isArray(scope)
     for item in scope
@@ -96,17 +89,16 @@ resolvePath = (scope, path, acc) ->
   pathHead = path[0]
   pathTail = path.slice(1)
 
-  if !pathHead
-    putPathResult(acc, scope)
+  if pathHead == null || pathHead == undefined
+    acc.putValue(scope)
     return
 
-  if !scope
-    putPathResult(acc, null)
+  if scope == null || scope == undefined
+    acc.putValue(null)
     return
   else
     if isWildcard(pathHead)
-      if !Array.isArray(acc.result)
-        acc.result = []
+      acc.makeMultiple()
 
       if Array.isArray(scope)
         for item in scope
@@ -117,17 +109,15 @@ resolvePath = (scope, path, acc) ->
           resolvePath(v, pathTail, acc)
 
       else
-        putPathResult(acc, null)
+        acc.putValue(null)
         return
     else if isDeepWildcard(pathHead)
-      if !Array.isArray(acc.result)
-        acc.result = []
+      acc.makeMultiple()
 
       resolveDeepWildcard(scope, pathTail, acc)
       return
     else if isPredicate(pathHead)
-      if !Array.isArray(acc.result)
-        acc.result = []
+      acc.makeMultiple()
 
       if Array.isArray(scope)
         for item in scope
@@ -140,22 +130,38 @@ resolvePath = (scope, path, acc) ->
             resolvePath(v, pathTail, acc)
 
       else
-        putPathResult(acc, null)
+        acc.putValue(null)
         return
     else if isPathExpression(pathHead)
-      putPathResult(acc, "TODO: path expressions are not implemented")
-      return
+      exprResult = evalAst(pathHead[1], scope)
+
+      resolvePath(exprResult, pathTail, acc)
     else
       if Array.isArray(scope) && !Number.isInteger(pathHead)
-        putPathResult(acc, null)
+        acc.putValue(null)
         return
       else
         resolvePath(scope[pathHead], pathTail, acc)
 
+class PathAccumulator
+  constructor: () ->
+    @result = null
+    @isMultiple = false
+
+  makeMultiple: () ->
+    unless @isMultiple
+      @isMultiple = true
+      @result = []
+
+  putValue: (v) ->
+    if @isMultiple
+      @result.push(v) if v != null && v != undefined
+    else
+      @result = v
+
 evalPath = (ast, scope) ->
-  # console.log "evaluating:", JSON.stringify(ast, null, 2)
   components = ast.slice(1)
-  acc = { result: null }
+  acc = new PathAccumulator
 
   resolvePath(scope, components, acc)
   return acc.result
