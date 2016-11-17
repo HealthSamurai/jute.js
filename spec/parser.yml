@@ -30,6 +30,9 @@ tests:
   - str: '"first line\nsecond line"'
     ast: first line\nsecond line
 
+  - str: 'foo | bar'
+    ast: ["|", ["path", "foo"], ["path", "bar"]]
+
   - str: '12'
     ast: 12
 
@@ -55,6 +58,18 @@ tests:
       - - '+'
         - 2
         - 3
+
+  - str: "abs(-12.3) * foo.bar.**.baz |> bar"
+    ast:
+      - "call"
+      - "bar"
+      - - "call"
+        - "foo"
+        - - '+'
+          - 2
+          - 3
+        - true
+        - "str"
 
   - str: "2 + 3 |> foo(true, 'str') |> bar"
     ast:

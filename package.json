@@ -8,7 +8,8 @@
     "coffee": "latest",
     "mocha": "latest",
     "js-yaml": "latest",
-    "pegjs": "latest"
+    "pegjs": "latest",
+    "md5": "latest"
   },
   "engines": {
     "node": ">=0.12.0"

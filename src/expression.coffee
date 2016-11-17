@@ -1,4 +1,4 @@
-# parser var is defined here
+globalParser = this.parser # parser is already defined
 
 toSet = (v, stringify) ->
   if Array.isArray(v)
@@ -166,6 +166,18 @@ evalPath = (ast, scope) ->
   resolvePath(scope, components, acc)
   return acc.result
 
+evalCall = (ast, scope) ->
+  fnName = ast[1]
+  fn = HELPERS[fnName]
+
+  if !fn
+    throw new Error("Unknow function: #{fnName}")
+
+  args = ast.slice(2).map((arg) => evalAst(arg, scope))
+  result = fn.apply(scope, args)
+
+  return result
+
 EVAL_TABLE =
   "+": mkEvalOp((a, b) -> a + b)
   "|": evalUnion
@@ -180,9 +192,10 @@ EVAL_TABLE =
   "<=": mkEvalOp((a, b) -> a <= b)
   "unary-": evalUnaryMinus
   "path": evalPath
+  "call": evalCall
 
 evalExpression = (expr, scope) ->
-  ast = parser.parse(expr)
+  ast = globalParser.parse(expr)
   evalAst(ast, scope)
 
 evalAst = (ast, scope) ->

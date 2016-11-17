@@ -1,7 +1,41 @@
+md5 = require('md5')
+
 HELPERS =
   join: (s, sep) -> s.join(sep)
   toUpperCase: (s) -> String(s).toUpperCase()
   toLowerCase: (s) -> String(s).toLowerCase()
+
+  trim: (v) ->
+    return v if typeof(v) != 'string'
+    v.trim()
+
+  dateTime: (v) -> v && v[1] || null
+
+  translateCode: (v) -> v
+
+  capitalize: (s) ->
+    return null if !s
+    s[0].toUpperCase() + s.substr(1).toLowerCase()
+
+  flatten: (v) ->
+    return v if !Array.isArray(v)
+
+    result = []
+    for item in v
+      if Array.isArray(item)
+        result = result.concat(item)
+      else
+        result.push(item)
+
+    result
+
+  md5: (v) ->
+    t = typeof(v)
+
+    if t == 'string' || t == 'boolean' || t == 'number' || t == 'undefined'
+      md5(String(v))
+    else
+      md5(JSON.stringify(v))
 
 makeChildScope = (scope) ->
   childScope = {}
@@ -55,11 +89,29 @@ evalObject = (node, scope, options) ->
 
     result
 
+isInterpolableString = (node) ->
+  node != null and
+    node != undefined and
+    typeof node == 'string' and
+    (node.indexOf('{{') >= 0 || node[0] == '$')
+
+resultToString = (result) ->
+  if result == null || result == undefined
+    ""
+  else
+    String(result)
+
+interpolateString = (str, context) ->
+  str.replace /\{\{([^}]+)\}\}/g, (m, expr) ->
+    resultToString(jute.evalExpression(expr.trim(), context))
+
 evalString = (node, scope, options) ->
   expressionStartRegexp = /^\s*\$\s+/
 
   if node.match expressionStartRegexp # is it expression?
     jute.evalExpression(node.replace(expressionStartRegexp, ''), scope)
+  else if isInterpolableString(node)
+    interpolateString(node, scope)
   else
     node
 
@@ -99,7 +151,7 @@ transform = (scope, template, options) ->
 
 exports =
   transform: transform
-  parser: parser
+  parser: globalParser
   jute: jute
 
 if typeof(module) != 'undefined'
