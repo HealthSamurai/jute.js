@@ -62,6 +62,7 @@ NegationExpr
 
 Value
   = l:Literal { return l; }
+  / fnCall:FunctionCall { return fnCall; }
   / q:Path { return q; }
   / LPAR e:Expr RPAR { return e; }
 
@@ -106,22 +107,28 @@ PathPredicate
     { return ["pred", e]; }
 
 //////////////////////////////////////////
-// FILTERS
+// FILTERS AND FUNCTIONS
 //////////////////////////////////////////
+
+FunctionCall
+  = name:PathHead args:FunctionArgs
+    { return ["call", name].concat(args || []); }
+  / name:PathHead LPAR SPACE RPAR
+    { return ["call", name]; }
 
 Filters
   = filters:(SPACE '|>' SPACE filter:Filter { return filter; })+
     { return filters; }
 
 Filter
-  = name:$FilterName args:FilterArgs? {
+  = name:$FilterName args:FunctionArgs? {
     return {name: name, args: args || []};
   }
 
 FilterName
   = ID_CHAR +
 
-FilterArgs
+FunctionArgs
   = LPAR SPACE head:Expr
     tail:(SPACE COMMA SPACE e:Expr {return e;})* SPACE RPAR
     { return [head].concat(tail); }

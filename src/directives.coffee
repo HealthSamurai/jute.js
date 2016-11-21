@@ -91,6 +91,23 @@ evalMap = (jute, node, scope, options) ->
 
   result
 
+evalConcat = (jute, node, scope, options) ->
+  array = jute.evalNode(node.$concat, scope, options)
+
+  if (!Array.isArray(array))
+    array = [array]
+
+  result = []
+
+  array.forEach (item) ->
+    if Array.isArray(item)
+      result = result.concat(item)
+    else
+      result.push(item)
+
+  result
+
+
 DEFAULT_DIRECTIVES =
   $if: evalIf
   $switch: evalSwitch
@@ -98,3 +115,4 @@ DEFAULT_DIRECTIVES =
   $filter: evalFilter
   $map: evalMap
   $js: evalJs
+  $concat: evalConcat

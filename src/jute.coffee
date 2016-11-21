@@ -13,6 +13,14 @@ HELPERS =
 
   translateCode: (v) -> v
 
+  truncate: (v, length) ->
+    if typeof(v) == 'string'
+      v.substring(0, length)
+    else
+      null
+
+  parseInt: parseInt
+
   capitalize: (s) ->
     return null if !s
     s[0].toUpperCase() + s.substr(1).toLowerCase()

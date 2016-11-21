@@ -61,15 +61,11 @@ tests:
 
   - str: "abs(-12.3) * foo.bar.**.baz |> bar"
     ast:
-      - "call"
-      - "bar"
-      - - "call"
-        - "foo"
-        - - '+'
-          - 2
-          - 3
-        - true
-        - "str"
+      - call
+      - bar
+      - - "*"
+        - ["call", "abs", ["unary-", 12.3]]
+        - ["path", "foo", "bar", ["deepWildcard"], "baz"]
 
   - str: "2 + 3 |> foo(true, 'str') |> bar"
     ast:
@@ -157,6 +153,18 @@ tests:
       - "242"
       - "30"
       - "4"
+
+  - str: "func(a.b)"
+    ast:
+      - call
+      - func
+      - ["path", "a", "b"]
+
+  - str: "a.b |> func"
+    ast:
+      - call
+      - func
+      - ["path", "a", "b"]
 
   - str: "@.foo.bar.baz"
     ast:
