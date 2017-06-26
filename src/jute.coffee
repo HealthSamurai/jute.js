@@ -1,5 +1,3 @@
-md5 = require('md5')
-
 HELPERS =
   join: (s, sep) -> s.join(sep)
   toUpperCase: (s) -> String(s).toUpperCase()
@@ -37,13 +35,13 @@ HELPERS =
 
     result
 
-  md5: (v) ->
-    t = typeof(v)
+  # md5: (v) ->
+  #   t = typeof(v)
 
-    if t == 'string' || t == 'boolean' || t == 'number' || t == 'undefined'
-      md5(String(v))
-    else
-      md5(JSON.stringify(v))
+  #   if t == 'string' || t == 'boolean' || t == 'number' || t == 'undefined'
+  #     md5(String(v))
+  #   else
+  #     md5(JSON.stringify(v))
 
 makeChildScope = (scope) ->
   childScope = {}
