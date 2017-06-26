@@ -185,6 +185,8 @@ EVAL_TABLE =
   "*": mkEvalOp((a, b) -> a * b)
   "/": mkEvalOp((a, b) -> a / b)
   "=": mkEvalOp((a, b) -> a == b)
+  "&&": mkEvalOp((a, b) -> a && b)
+  "||": mkEvalOp((a, b) -> a || b)
   "!=": mkEvalOp((a, b) -> a != b)
   ">": mkEvalOp((a, b) -> a > b)
   "<": mkEvalOp((a, b) -> a < b)

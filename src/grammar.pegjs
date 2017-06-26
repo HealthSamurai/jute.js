@@ -2,7 +2,7 @@ Root
   = e:Expr !. { return e; }
 
 Expr
-  = expr:EqualityExpr filters:Filters? {
+  = expr:BoolOrExpr filters:Filters? {
     var result = expr;
     if (filters != null) {
       for(var i = 0; i < filters.length; i++) {
@@ -15,6 +15,22 @@ Expr
       return result;
     }
   }
+
+BoolOrExpr
+  = left:BoolAndExpr
+    SPACE '||' SPACE
+    right:BoolOrExpr
+    { return ["||", left, right]; }
+
+  / BoolAndExpr
+
+BoolAndExpr
+  = left:EqualityExpr
+    SPACE '&&' SPACE
+    right:BoolAndExpr
+    { return ["&&", left, right]; }
+
+  / EqualityExpr
 
 EqualityExpr
   = left:ComparisonExpr

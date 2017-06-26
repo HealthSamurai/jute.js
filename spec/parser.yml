@@ -176,6 +176,9 @@ tests:
   - str: "-(2.0 + 3.0)"
     ast: ["unary-", ["+", 2.0, 3.0]]
 
+  - str: "foo && bar || baz = 3"
+    ast: ["||", ["&&", ["path", "foo"], ["path", "bar"]], ["=", ["path", "baz"], 3]]
+
   - str: "(path + starting).with.expression"
     ast:
       - "path"
