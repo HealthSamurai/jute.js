@@ -91,6 +91,18 @@ tests:
     scope:
       <<: *goessner
     template:
+      prices: $ store.book.*.price
+    result:
+      prices:
+        - 8.95
+        - 12.99
+        - 8.99
+        - 22.99
+
+  - desc: wildcards works for arrays
+    scope:
+      <<: *goessner
+    template:
       prices: $ store.*.*.price
     result:
       prices:
@@ -100,7 +112,7 @@ tests:
         - 22.99
         - 1.3
 
-  - desc: path with predicate selectes values which satisfies expression
+  - desc: path with predicate select values which satisfies expression
     scope:
       <<: *goessner
     template:

@@ -145,6 +145,7 @@ evalNode = (node, scope, options) ->
 
 jute =
   evalExpression: evalExpression
+  evalExpressionAst: evalAst
   evalNode: evalNode
   makeChildScope: makeChildScope
 
