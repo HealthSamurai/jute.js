@@ -41,12 +41,11 @@ HELPERS =
     if Array.isArray(v)
       fn = (res, x) ->
         keyVal = evalAst(ast, x)
-        res[keyVal] ||= []
+        res[keyVal] ?= []
         res[keyVal].push(x)
         res
 
       r = v.reduce(fn, {})
-      console.log("!!!!", JSON.stringify(r, null, 2))
       r
 
     else
