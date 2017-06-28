@@ -23,6 +23,34 @@ HELPERS =
     return null if !s
     s[0].toUpperCase() + s.substr(1).toLowerCase()
 
+  sortBy: (v, expr) ->
+    ast = parser.parse(expr)
+
+    if Array.isArray(v)
+      v.sort (a, b) ->
+        aVal = jute.evalAst(ast, a)
+        bVal = jute.evalAst(ast, b)
+
+        if aVal > bVal then 1 else (if aVal < bVal then -1 else 0)
+    else
+      v
+
+  groupBy: (v, expr) ->
+    ast = parser.parse(expr)
+
+    if Array.isArray(v)
+      fn = (res, x) ->
+        keyVal = jute.evalAst(ast, x)
+        res[keyVal] = x
+        res
+
+      r = v.reduce(fn, {})
+      console.log("!!!!", JSON.stringify(r, null, 2))
+      r
+
+    else
+      v
+
   flatten: (v) ->
     return v if !Array.isArray(v)
 
@@ -34,14 +62,6 @@ HELPERS =
         result.push(item)
 
     result
-
-  # md5: (v) ->
-  #   t = typeof(v)
-
-  #   if t == 'string' || t == 'boolean' || t == 'number' || t == 'undefined'
-  #     md5(String(v))
-  #   else
-  #     md5(JSON.stringify(v))
 
 makeChildScope = (scope) ->
   childScope = {}
