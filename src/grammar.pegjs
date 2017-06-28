@@ -101,7 +101,7 @@ PathHead
     { return text() };
 
 PathComponent
-  = [0-9]+
+  = MINUS ? [0-9]+
     { return parseInt(text()); }
   / ID_CHAR+
     { return text(); }

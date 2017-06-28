@@ -73,6 +73,29 @@ tests:
         title: "Sword of Honour"
         price: 12.99
 
+
+  - desc: path allow negative array indices
+    scope:
+      <<: *goessner
+    template:
+      first: $ store.book.-1
+      second: $ store.book.-2
+    result:
+      first:
+        category: "fiction"
+        author: "J. R. R. Tolkien"
+        title: "The Lord of the Rings"
+        isbn: "0-395-19395-8"
+        price: 22.99
+
+      second:
+        category: "fiction"
+        author: "Herman Melville"
+        title: "Moby Dick"
+        isbn: "0-553-21311-3"
+        price: 8.99
+
+
   - desc: path with deep wildcards collects all values regardless its level
     scope:
       <<: *goessner

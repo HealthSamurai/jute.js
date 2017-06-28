@@ -141,7 +141,14 @@ resolvePath = (scope, path, acc) ->
         acc.putValue(null)
         return
       else
-        resolvePath(scope[pathHead], pathTail, acc)
+        i = null
+
+        if Array.isArray(scope) && Number.isInteger(pathHead) && pathHead < 0
+          i = scope.length + pathHead
+        else
+          i = pathHead
+
+        resolvePath(scope[i], pathTail, acc)
 
 class PathAccumulator
   constructor: () ->
