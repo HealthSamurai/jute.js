@@ -4,6 +4,7 @@ tests:
   - desc: path with wildcard returns array of values
     scope: &goessner
       store:
+        "key with spaces": 42
         book:
           - category: "reference"
             author: "Nigel Rees"
@@ -73,6 +74,13 @@ tests:
         title: "Sword of Honour"
         price: 12.99
 
+  - desc: path allow string literals as path components
+    scope:
+      <<: *goessner
+    template:
+      first: $ store."key with spaces"
+    result:
+      first: 42
 
   - desc: path allow negative array indices
     scope:

@@ -105,6 +105,8 @@ PathComponent
     { return parseInt(text()); }
   / ID_CHAR+
     { return text(); }
+  / s:StringLiteral
+    { return s; }
   / p:PathPredicate
     { return p; }
   / '**'
