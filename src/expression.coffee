@@ -175,7 +175,7 @@ evalPath = (ast, scope) ->
 
 evalCall = (ast, scope) ->
   fnName = ast[1]
-  fn = HELPERS[fnName]
+  fn = scope[fnName] || HELPERS[fnName]
 
   if !fn
     throw new Error("Unknow function: #{fnName}")
