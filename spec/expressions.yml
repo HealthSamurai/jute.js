@@ -213,3 +213,43 @@ tests:
       ex1: true
       ex2: true
 
+  - desc: sortBy helper sorts stuff
+    scope:
+      items:
+        - {foo: 5}
+        - {foo: 2}
+        - {foo: 8}
+        - {foo: 1}
+        - {foo: 1}
+
+    template:
+      ex1: $ items |> sortBy('foo')
+    result:
+      ex1:
+        - {foo: 1}
+        - {foo: 1}
+        - {foo: 2}
+        - {foo: 5}
+        - {foo: 8}
+
+  - desc: groupBy helper groups stuff
+    scope:
+      items:
+        - {foo: 5, bar: "a"}
+        - {foo: 2, bar: "a"}
+        - {foo: 8, bar: "b"}
+        - {foo: 1, bar: "b"}
+        - {foo: 1, bar: "c"}
+
+    template:
+      ex1: $ items |> sortBy('foo') |> groupBy('bar')
+    result:
+      ex1:
+        a:
+          - {foo: 2, bar: "a"}
+          - {foo: 5, bar: "a"}
+        b:
+          - {foo: 1, bar: "b"}
+          - {foo: 8, bar: "b"}          
+        c:
+          - {foo: 1, bar: "c"}

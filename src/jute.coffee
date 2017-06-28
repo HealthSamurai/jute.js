@@ -24,24 +24,25 @@ HELPERS =
     s[0].toUpperCase() + s.substr(1).toLowerCase()
 
   sortBy: (v, expr) ->
-    ast = parser.parse(expr)
+    ast = globalParser.parse(expr)
 
     if Array.isArray(v)
       v.sort (a, b) ->
-        aVal = jute.evalAst(ast, a)
-        bVal = jute.evalAst(ast, b)
+        aVal = evalAst(ast, a)
+        bVal = evalAst(ast, b)
 
         if aVal > bVal then 1 else (if aVal < bVal then -1 else 0)
     else
       v
 
   groupBy: (v, expr) ->
-    ast = parser.parse(expr)
+    ast = globalParser.parse(expr)
 
     if Array.isArray(v)
       fn = (res, x) ->
-        keyVal = jute.evalAst(ast, x)
-        res[keyVal] = x
+        keyVal = evalAst(ast, x)
+        res[keyVal] ||= []
+        res[keyVal].push(x)
         res
 
       r = v.reduce(fn, {})
