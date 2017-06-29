@@ -74,18 +74,18 @@ isPredicate = (c) ->
 isPathExpression = (c) ->
   Array.isArray(c) && c[0] == 'expr'
 
-resolveDeepWildcard = (scope, path, acc) ->
+resolveDeepWildcard = (topLevelScope, scope, path, acc) ->
   if Array.isArray(scope)
     for item in scope
-      resolvePath(item, path, acc)
-      resolveDeepWildcard(item, path, acc)
+      resolvePath(topLevelScope, item, path, acc)
+      resolveDeepWildcard(topLevelScope, item, path, acc)
 
   else if typeof(scope) == 'object'
     for k, v of scope
-      resolvePath(v, path, acc)
-      resolveDeepWildcard(v, path, acc)
+      resolvePath(topLevelScope, v, path, acc)
+      resolveDeepWildcard(topLevelScope, v, path, acc)
 
-resolvePath = (scope, path, acc) ->
+resolvePath = (topLevelScope, scope, path, acc) ->
   pathHead = path[0]
   pathTail = path.slice(1)
 
@@ -102,11 +102,11 @@ resolvePath = (scope, path, acc) ->
 
       if Array.isArray(scope)
         for item in scope
-          resolvePath(item, pathTail, acc)
+          resolvePath(topLevelScope, item, pathTail, acc)
 
       else if typeof(scope) == "object"
         for k, v of scope
-          resolvePath(v, pathTail, acc)
+          resolvePath(topLevelScope, v, pathTail, acc)
 
       else
         acc.putValue(null)
@@ -114,20 +114,28 @@ resolvePath = (scope, path, acc) ->
     else if isDeepWildcard(pathHead)
       acc.makeMultiple()
 
-      resolveDeepWildcard(scope, pathTail, acc)
+      resolveDeepWildcard(topLevelScope, scope, pathTail, acc)
       return
     else if isPredicate(pathHead)
       acc.makeMultiple()
 
       if Array.isArray(scope)
+        childScope = makeChildScope(topLevelScope)
+
         for item in scope
-          if evalAst(pathHead[1], item)
-            resolvePath(item, pathTail, acc)
+          childScope.this = item
+
+          if evalAst(pathHead[1], childScope)
+            resolvePath(topLevelScope, item, pathTail, acc)
 
       else if typeof(scope) == "object"
+        childScope = makeChildScope(topLevelScope)
+
         for k, v of scope
-          if evalAst(pathHead[1], v)
-            resolvePath(v, pathTail, acc)
+          childScope.this = v
+
+          if evalAst(pathHead[1], childScope)
+            resolvePath(topLevelScope, v, pathTail, acc)
 
       else
         acc.putValue(null)
@@ -135,7 +143,7 @@ resolvePath = (scope, path, acc) ->
     else if isPathExpression(pathHead)
       exprResult = evalAst(pathHead[1], scope)
 
-      resolvePath(exprResult, pathTail, acc)
+      resolvePath(topLevelScope, exprResult, pathTail, acc)
     else
       if Array.isArray(scope) && !Number.isInteger(pathHead)
         acc.putValue(null)
@@ -148,7 +156,7 @@ resolvePath = (scope, path, acc) ->
         else
           i = pathHead
 
-        resolvePath(scope[i], pathTail, acc)
+        resolvePath(topLevelScope, scope[i], pathTail, acc)
 
 class PathAccumulator
   constructor: () ->
@@ -170,7 +178,7 @@ evalPath = (ast, scope) ->
   components = ast.slice(1)
   acc = new PathAccumulator
 
-  resolvePath(scope, components, acc)
+  resolvePath(scope, scope, components, acc)
   return acc.result
 
 evalCall = (ast, scope) ->

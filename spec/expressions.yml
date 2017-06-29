@@ -3,6 +3,7 @@ suite: Expressions
 tests:
   - desc: path with wildcard returns array of values
     scope: &goessner
+      someVar: "fiction"
       store:
         "key with spaces": 42
         book:
@@ -147,15 +148,24 @@ tests:
     scope:
       <<: *goessner
     template:
-      cheap_books: $ store.book.*(@.price < 10).title
-      reference_book: $ store.book.*(@.category = 'reference').title
+      foo: $ someVar
+      cheap_books: $ store.book.*(this.price < 10).title
+      reference_book: $ store.book.*(this.category = 'reference').title
+      fiction_books: $ store.book.*(this.category = someVar).title
     result:
+      foo: 'fiction'
       reference_book:
         - "Sayings of the Century"
 
       cheap_books:
         - "Sayings of the Century"
         - "Moby Dick"
+
+      fiction_books:
+        - "Sword of Honour"
+        - "Moby Dick"
+        - "The Lord of the Rings"
+
 
   - desc: path with wildcards collects all available elements
     scope: {"a": 3, "b": 5, "c": [true, false]}
