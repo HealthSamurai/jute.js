@@ -75,9 +75,13 @@ evalJs = (jute, node, scope, options) ->
 
 evalMap = (jute, node, scope, options) ->
   array = jute.evalExpression(node.$map, scope, options)
+  isObject = false
 
   if (!Array.isArray(array))
-    array = [array]
+    if typeof(array) == "object"
+      isObject = true
+    else
+      array = [array]
 
   varName = node.$as
   value = nodeValue(node, '$body', options)
@@ -85,9 +89,14 @@ evalMap = (jute, node, scope, options) ->
   result = []
   childScope = jute.makeChildScope(scope)
 
-  array.forEach (item) ->
-    childScope[varName] = item
-    result.push jute.evalNode(value, childScope, options)
+  if isObject
+    for k, v of array
+      childScope[varName] = { key: k, value: v }
+      result.push jute.evalNode(value, childScope, options)
+  else
+    array.forEach (item) ->
+      childScope[varName] = item
+      result.push jute.evalNode(value, childScope, options)
 
   result
 

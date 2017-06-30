@@ -19,3 +19,31 @@ tests:
       - "hello, Bob"
       - "hello, John"
       - "hello, Nick"
+
+  - desc: works for objects too
+
+    scope:
+      items:
+        names:
+          - "Bob"
+          - "John"
+          - "Nick"
+        families:
+          - "Smith"
+          - "James"
+
+    template:
+      $map: items
+      $as: i
+      $body:
+        - $ i.key
+        - $ i.value
+
+    result:
+      - - "names"
+        - - "Bob"
+          - "John"
+          - "Nick"
+      - - "families"
+        - - "Smith"
+          - "James"
