@@ -146,7 +146,6 @@ resolvePath = (topLevelScope, scope, path, acc) ->
 
       exprResult = evalAst(pathHead[1], childScope)
 
-      console.log("resolving with ", [exprResult].concat(pathTail))
       resolvePath(topLevelScope, scope, [exprResult].concat(pathTail), acc)
     else
       if Array.isArray(scope) && !Number.isInteger(pathHead)
