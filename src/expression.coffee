@@ -141,9 +141,13 @@ resolvePath = (topLevelScope, scope, path, acc) ->
         acc.putValue(null)
         return
     else if isPathExpression(pathHead)
-      exprResult = evalAst(pathHead[1], scope)
+      childScope = makeChildScope(topLevelScope)
+      childScope.this = scope
 
-      resolvePath(topLevelScope, exprResult, pathTail, acc)
+      exprResult = evalAst(pathHead[1], childScope)
+
+      console.log("resolving with ", [exprResult].concat(pathTail))
+      resolvePath(topLevelScope, scope, [exprResult].concat(pathTail), acc)
     else
       if Array.isArray(scope) && !Number.isInteger(pathHead)
         acc.putValue(null)

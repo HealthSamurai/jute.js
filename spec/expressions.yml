@@ -4,6 +4,8 @@ tests:
   - desc: path with wildcard returns array of values
     scope: &goessner
       someVar: "fiction"
+      otherVar: 3
+      thirdVar: "book"
       store:
         "key with spaces": 42
         book:
@@ -229,18 +231,38 @@ tests:
         - 22.99
         - 1.3
 
-  - desc: path expressions change path scope
+  # - desc: path expressions change path scope
+  #   scope:
+  #     <<: *goessner
+  #   template:
+  #     bar: $ store.(this.book | this.flower).*.price
+  #   result:
+  #     bar:
+  #       - 8.95
+  #       - 12.99
+  #       - 8.99
+  #       - 22.99
+  #       - 1.3
+
+  - desc: path expressions allow expressions as path elements
     scope:
       <<: *goessner
     template:
-      bar: $ store.(book | flower).*.price
+      first: $ store.book.(otherVar)
+      second: $ store.(thirdVar).0
     result:
-      bar:
-        - 8.95
-        - 12.99
-        - 8.99
-        - 22.99
-        - 1.3
+      first:
+        category: "fiction"
+        author: "J. R. R. Tolkien"
+        title: "The Lord of the Rings"
+        isbn: "0-395-19395-8"
+        price: 22.99
+
+      second:
+        category: "reference"
+        author: "Nigel Rees"
+        title: "Sayings of the Century"
+        price: 8.95
 
   - desc: boolean logic expressions are evaluated properly
     scope:
