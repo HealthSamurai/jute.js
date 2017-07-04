@@ -42,7 +42,7 @@ EqualityExpr
 
 ComparisonExpr
   = left:AdditiveExpr
-    SPACE operator:$( '<' / '<=' / '>' / '>=' ) SPACE
+    SPACE operator:$( '<=' / '<' / '>=' / '>' ) SPACE
     right:ComparisonExpr
     { return [operator, left, right]; }
 

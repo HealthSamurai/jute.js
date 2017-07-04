@@ -140,6 +140,12 @@ tests:
       - ["deepWildcard"]
       - "bar"
 
+  - str: "a >= b"
+    ast:
+      - ">="
+      - ["path", "a"]
+      - ["path", "b"]
+
   - str: "@.2.3.4"
     ast:
       - "path"

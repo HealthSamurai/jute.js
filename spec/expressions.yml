@@ -302,7 +302,7 @@ tests:
         - {foo: 2, bar: "a"}
         - {foo: 8, bar: "b"}
         - {foo: 1, bar: "b"}
-        - {foo: 1, bar: "c"}
+        - {foo: 1}
 
     template:
       ex1: $ items |> sortBy('foo') |> groupBy('bar')
@@ -314,5 +314,3 @@ tests:
         b:
           - {foo: 1, bar: "b"}
           - {foo: 8, bar: "b"}          
-        c:
-          - {foo: 1, bar: "c"}
