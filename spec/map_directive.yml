@@ -11,7 +11,7 @@ tests:
         - "Nick"
 
     template:
-      $map: names
+      $map: $ names
       $as: name
       $body: $ "hello, " + name
 
@@ -33,7 +33,7 @@ tests:
           - "James"
 
     template:
-      $map: items
+      $map: $ items
       $as: i
       $body:
         - $ i.key

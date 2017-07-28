@@ -1,3 +1,6 @@
+EXPRESSION_START_REGEXP = /^\s*\$\s+/
+EXPRESSION_INDICATOR = "!expr"
+
 HELPERS =
   join: (s, sep) -> s.join(sep)
   toUpperCase: (s) -> String(s).toUpperCase()
@@ -135,10 +138,8 @@ interpolateString = (str, context) ->
     resultToString(jute.evalExpression(expr.trim(), context))
 
 evalString = (node, scope, options) ->
-  expressionStartRegexp = /^\s*\$\s+/
-
-  if node.match expressionStartRegexp # is it expression?
-    jute.evalExpression(node.replace(expressionStartRegexp, ''), scope)
+  if node.match EXPRESSION_START_REGEXP
+    jute.evalExpression(node.replace(EXPRESSION_START_REGEXP, ''), scope)
   else if isInterpolableString(node)
     interpolateString(node, scope)
   else
@@ -155,19 +156,29 @@ evalNode = (node, scope, options) ->
 
   if nodeType == 'object' && node != null
     if Array.isArray(node)
-      node.map (element) -> jute.evalNode(element, scope, options)
+      if node[0] == EXPRESSION_INDICATOR
+        evalAst(node[1], scope)
+      else
+        node.map (element) -> jute.evalNode(element, scope, options)
     else
       evalObject(node, scope, options)
   else
-    if nodeType == 'string'
-      evalString(node, scope, options)
-    else if nodeType == 'undefined'
-      null
-    else
-      node
+    node
+
+compile = (node) ->
+  if typeof(node) == 'string' && node.match(EXPRESSION_START_REGEXP)
+    [EXPRESSION_INDICATOR, globalParser.parse(node.replace(EXPRESSION_START_REGEXP, ''))]
+  else if Array.isArray(node)
+    node.map compile
+  else if typeof(node) == 'object'
+    result = {}
+    Object.keys(node).forEach((k) -> result[k] = compile(node[k]))
+    result
+  else
+    node
 
 jute =
-  evalExpression: evalExpression
+  # evalExpression: evalExpression
   evalExpressionAst: evalAst
   evalNode: evalNode
   makeChildScope: makeChildScope
@@ -182,6 +193,8 @@ transform = (scope, template, options) ->
 exports =
   transform: transform
   parser: globalParser
+  compile: compile
+  EXPRESSION_INDICATOR: EXPRESSION_INDICATOR
   jute: jute
 
 if typeof(module) != 'undefined'

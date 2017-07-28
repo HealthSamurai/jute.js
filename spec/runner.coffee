@@ -17,7 +17,8 @@ findYamls specsRoot, /_directive|expressions/, (spec) ->
   describe spec.suite, () ->
     spec.tests.forEach (test) ->
       it test.desc, () ->
-        result = jute.transform(test.scope, test.template)
+        ast = jute.compile test.template
+        result = jute.transform(test.scope, ast)
         assert.deepEqual(test.result, result)
 
 parserSpec = yaml.safeLoad(fs.readFileSync(specsRoot + "/parser.yml", 'utf8'))
@@ -40,7 +41,7 @@ describe "custom directive", () ->
 
     t =
       $join:
-        $map: "names"
+        $map: "$ names"
         $as: "name"
         $body: "$ name"
       $separator: ', '
@@ -49,5 +50,21 @@ describe "custom directive", () ->
       directives:
         $join: evalJoin
 
-    result = jute.transform(s, t, options)
+    ast = jute.compile(t)
+    result = jute.transform(s, ast, options)
     assert.deepEqual("Mike, Bob, July", result)
+
+describe "jute.compile", () ->
+  it "should allow to provide custom directive in 'options' argument", () ->
+    t =
+      $if: "$ 2 + 3"
+      $then: "foo"
+      $else: ["$ 4 - 2"]
+
+    ast =
+      $if: [jute.EXPRESSION_INDICATOR, ["+", 2, 3]]
+      $then: "foo"
+      $else: [[jute.EXPRESSION_INDICATOR, ["-", 4, 2]]]
+
+    result = jute.compile(t)
+    assert.deepEqual(ast, result)

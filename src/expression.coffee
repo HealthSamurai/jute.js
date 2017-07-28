@@ -214,9 +214,9 @@ EVAL_TABLE =
   "path": evalPath
   "call": evalCall
 
-evalExpression = (expr, scope) ->
-  ast = globalParser.parse(expr)
-  evalAst(ast, scope)
+# evalExpression = (expr, scope) ->
+#   ast = globalParser.parse(expr)
+#   evalAst(ast, scope)
 
 evalAst = (ast, scope) ->
   # console.log "EVAL:", ast, scope

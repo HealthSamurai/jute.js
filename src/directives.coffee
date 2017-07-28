@@ -21,7 +21,7 @@ evalLet = (jute, node, scope, options) ->
   jute.evalNode(body, childScope, options)
 
 evalIf = (jute, node, scope, options) ->
-  evalResult = jute.evalExpression(node.$if, scope, options)
+  evalResult = jute.evalNode(node.$if, scope, options)
 
   if evalResult
     v = nodeValue(node, '$then')
@@ -30,7 +30,7 @@ evalIf = (jute, node, scope, options) ->
     jute.evalNode(node.$else || null, scope, options)
 
 evalSwitch = (jute, node, scope, options) ->
-  evalResult = jute.evalExpression(node.$switch, scope, options)
+  evalResult = jute.evalNode(node.$switch, scope, options)
   resultNode = node[evalResult]
 
   if typeof(resultNode) == 'undefined'
@@ -74,7 +74,7 @@ evalJs = (jute, node, scope, options) ->
   eval(node.$js)
 
 evalMap = (jute, node, scope, options) ->
-  array = jute.evalExpression(node.$map, scope, options)
+  array = jute.evalNode(node.$map, scope, options)
   isObject = false
 
   if (!Array.isArray(array))

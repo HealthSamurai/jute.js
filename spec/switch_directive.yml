@@ -7,7 +7,7 @@ tests:
     scope:
       foo: 1
     template:
-      $switch: foo + 1
+      $switch: $ foo + 1
       1: "wrong"
       2: "right"
 
@@ -20,7 +20,7 @@ tests:
       foo: 1
 
     template:
-      $switch: 'foo'
+      $switch: $ foo
       bar: 'bar'
       $default: $ foo + 1
 
@@ -31,7 +31,7 @@ tests:
 
     scope: null
     template:
-      $switch: 'foo'
+      $switch: $ foo
       bar: 'bar'
 
     result: null
