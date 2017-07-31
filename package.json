@@ -2,14 +2,14 @@
   "name": "jute",
   "version": "0.0.1",
   "dependencies": {
+    "md5": "latest"
   },
   "devDependencies": {
     "coffee-script": "latest",
     "coffee": "latest",
     "mocha": "latest",
     "js-yaml": "latest",
-    "pegjs": "latest",
-    "md5": "latest"
+    "pegjs": "latest"
   },
   "engines": {
     "node": ">=0.12.0"

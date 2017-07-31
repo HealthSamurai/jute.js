@@ -1,6 +1,8 @@
 EXPRESSION_START_REGEXP = /^\s*\$\s+/
 EXPRESSION_INDICATOR = "!expr"
 
+md5 = require('md5');
+
 HELPERS =
   join: (s, sep) -> s.join(sep)
   toUpperCase: (s) -> String(s).toUpperCase()
@@ -56,6 +58,9 @@ HELPERS =
 
     else
       v
+
+  md5: (v) ->
+    md5(JSON.stringify(v))
 
   flatten: (v) ->
     return v if !Array.isArray(v)
