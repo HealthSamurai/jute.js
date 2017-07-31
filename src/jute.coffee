@@ -1,5 +1,6 @@
 EXPRESSION_START_REGEXP = /^\s*\$\s+/
 EXPRESSION_INDICATOR = "!expr"
+STRING_INTERPOLATION_REGEXP = /\{\{([^}]+)\}\}/g
 
 md5 = require('md5');
 
@@ -138,10 +139,6 @@ resultToString = (result) ->
   else
     String(result)
 
-interpolateString = (str, context) ->
-  str.replace /\{\{([^}]+)\}\}/g, (m, expr) ->
-    resultToString(jute.evalExpression(expr.trim(), context))
-
 evalString = (node, scope, options) ->
   if node.match EXPRESSION_START_REGEXP
     jute.evalExpression(node.replace(EXPRESSION_START_REGEXP, ''), scope)
@@ -170,9 +167,30 @@ evalNode = (node, scope, options) ->
   else
     node
 
+compileStringInterpolation = (node) ->
+  re = new RegExp(STRING_INTERPOLATION_REGEXP)
+  ast = ['+']
+  prevMatchIdx = 0
+
+  while match = re.exec(node)
+    ast.push(node.substr(prevMatchIdx, match.index - prevMatchIdx))
+    ast.push(globalParser.parse(match[1]))
+
+    prevMatchIdx = match.index + match[0].length
+
+  # string tail to the ast
+  ast.push(node.substr(prevMatchIdx))
+
+  [EXPRESSION_INDICATOR, ast]
+
 compile = (node) ->
-  if typeof(node) == 'string' && node.match(EXPRESSION_START_REGEXP)
-    [EXPRESSION_INDICATOR, globalParser.parse(node.replace(EXPRESSION_START_REGEXP, ''))]
+  if typeof(node) == 'string'
+    if node.match(EXPRESSION_START_REGEXP)
+      [EXPRESSION_INDICATOR, globalParser.parse(node.replace(EXPRESSION_START_REGEXP, ''))]
+    else if isInterpolableString(node)
+      compileStringInterpolation(node)
+    else
+      node
   else if Array.isArray(node)
     node.map compile
   else if typeof(node) == 'object'

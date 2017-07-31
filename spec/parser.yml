@@ -59,6 +59,11 @@ tests:
         - 2
         - 3
 
+  - str: a
+    ast:
+      - "path"
+      - "a"
+
   - str: "abs(-12.3) * foo.bar.**.baz |> bar"
     ast:
       - call
@@ -194,4 +199,3 @@ tests:
           - ["path", "starting"]
       - "with"
       - "expression"
-

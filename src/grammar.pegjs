@@ -2,7 +2,7 @@ Root
   = e:Expr !. { return e; }
 
 Expr
-  = expr:BoolOrExpr filters:Filters? {
+  = SPACE expr:BoolOrExpr filters:Filters? SPACE {
     var result = expr;
     if (filters != null) {
       for(var i = 0; i < filters.length; i++) {

@@ -55,15 +55,32 @@ describe "custom directive", () ->
     assert.deepEqual("Mike, Bob, July", result)
 
 describe "jute.compile", () ->
-  it "should allow to provide custom directive in 'options' argument", () ->
+  it "should compile expressions & interpolations to ast", () ->
     t =
       $if: "$ 2 + 3"
-      $then: "foo"
+      $then: "foo {{ a }} bar {{ b }} baz"
       $else: ["$ 4 - 2"]
 
     ast =
       $if: [jute.EXPRESSION_INDICATOR, ["+", 2, 3]]
-      $then: "foo"
+      $then: [
+        "!expr",
+        [
+          "+",
+          "foo ",
+          [
+            "path",
+            "a"
+          ],
+          " bar "
+          [
+            "path",
+            "b"
+          ],
+          " baz"
+        ]
+      ]
+
       $else: [[jute.EXPRESSION_INDICATOR, ["-", 4, 2]]]
 
     result = jute.compile(t)
