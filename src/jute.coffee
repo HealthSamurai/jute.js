@@ -41,6 +41,12 @@ HELPERS =
     else
       v
 
+  toStr: (result) ->
+    if result == null || result == undefined
+      ""
+    else
+      String(result)
+
   groupBy: (v, expr) ->
     ast = globalParser.parse(expr)
 
@@ -133,12 +139,6 @@ isInterpolableString = (node) ->
     typeof node == 'string' and
     (node.indexOf('{{') >= 0 || node[0] == '$')
 
-resultToString = (result) ->
-  if result == null || result == undefined
-    ""
-  else
-    String(result)
-
 evalString = (node, scope, options) ->
   if node.match EXPRESSION_START_REGEXP
     jute.evalExpression(node.replace(EXPRESSION_START_REGEXP, ''), scope)
@@ -174,7 +174,7 @@ compileStringInterpolation = (node) ->
 
   while match = re.exec(node)
     ast.push(node.substr(prevMatchIdx, match.index - prevMatchIdx))
-    ast.push(globalParser.parse(match[1]))
+    ast.push(["call", "toStr", globalParser.parse(match[1])])
 
     prevMatchIdx = match.index + match[0].length
 

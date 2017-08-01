@@ -68,15 +68,15 @@ describe "jute.compile", () ->
         [
           "+",
           "foo ",
-          [
+          ["call", "toStr", [
             "path",
             "a"
-          ],
+          ]],
           " bar "
-          [
+          ["call", "toStr", [
             "path",
             "b"
-          ],
+          ]],
           " baz"
         ]
       ]
