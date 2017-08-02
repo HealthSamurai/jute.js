@@ -5,7 +5,12 @@ STRING_INTERPOLATION_REGEXP = /\{\{([^}]+)\}\}/g
 md5 = require('md5');
 
 HELPERS =
-  join: (s, sep) -> s.join(sep)
+  join: (s, sep) ->
+    if Array.isArray(s)
+      s.join(sep)
+    else
+      s
+
   toUpperCase: (s) -> String(s).toUpperCase()
   toLowerCase: (s) -> String(s).toLowerCase()
 
@@ -46,6 +51,26 @@ HELPERS =
       ""
     else
       String(result)
+
+  uniq: (v, expr) ->
+    ast = globalParser.parse(expr)
+    result = []
+    vals = new Set()
+
+    if Array.isArray(v)
+      v.forEach el =>
+        thisVal = evalAst(ast, el)
+        if !vals.has(thisVal)
+          vals.add(thisVal)
+          result.push(el)
+    else
+      v
+
+  compact: (v) ->
+    if Array.isArray(v)
+      return v.filter (el) -> !!el
+    else
+      v
 
   groupBy: (v, expr) ->
     ast = globalParser.parse(expr)
@@ -184,7 +209,9 @@ compileStringInterpolation = (node) ->
   [EXPRESSION_INDICATOR, ast]
 
 compile = (node) ->
-  if typeof(node) == 'string'
+  if node == null || typeof node == 'undefined'
+    null
+  else if typeof(node) == 'string'
     if node.match(EXPRESSION_START_REGEXP)
       [EXPRESSION_INDICATOR, globalParser.parse(node.replace(EXPRESSION_START_REGEXP, ''))]
     else if isInterpolableString(node)
