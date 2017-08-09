@@ -92,7 +92,7 @@ HELPERS =
       v
 
   md5: (v) ->
-    md5(JSON.stringify(v || 'null'))
+    if v then md5(JSON.stringify(v)) else 'passed-null-to-md5-function'
 
   flatten: (v) ->
     return v if !Array.isArray(v)
