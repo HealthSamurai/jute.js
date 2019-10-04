@@ -1,4 +1,4 @@
 JSON Uniform Templates
 ----------------------
 
-Reference implementation of JUTE templating language.
+Development has been moved to the [HealthSamurai/jute.clj](https://github.com/HealthSamurai/jute.clj) repository.
